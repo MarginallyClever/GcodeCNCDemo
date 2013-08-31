@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// 2 Axis CNC Demo v2 - supports Adafruit motor shields v1 and v2
+// 4 Axis CNC Demo v2 - supports Adafruit motor shield v2
 // dan@marginallycelver.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
@@ -9,9 +9,6 @@
 //------------------------------------------------------------------------------
 // CONSTANTS
 //------------------------------------------------------------------------------
-//#define MOTOR_SHIELD_VERSION (1)  // change to your version number
-#define MOTOR_SHIELD_VERSION (2)  // Must choose one!
-
 //#define VERBOSE              (1)  // add to get a lot more serial output.
 
 #define VERSION              (2)  // firmware version
@@ -22,50 +19,48 @@
 #define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
 #define MIN_FEEDRATE         (0.01)
 
-#ifndef MOTOR_SHIELD_VERSION
-#error MOTOR_SHIELD_VERSION must be defined!
-#endif
-
 
 //------------------------------------------------------------------------------
 // INCLUDES
 //------------------------------------------------------------------------------
-#if MOTOR_SHIELD_VERSION == 1
-
-#include <AFMotorDrawbot.h>
-
-#else  // MOTOR_SHIELD_VERSION == 2
-
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_PWMServoDriver.h"
 
-#endif
+
+//------------------------------------------------------------------------------
+// STRUCTS
+//------------------------------------------------------------------------------
+// for line()
+typedef struct {
+  long delta;
+  long absdelta;
+  int dir;
+  long over;
+  int motor;
+} Axis;
+
 
 
 //------------------------------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------------------------------
 // Initialize Adafruit stepper controller
+Adafruit_MotorShield AFMS0 = Adafruit_MotorShield(0x61);
+Adafruit_MotorShield AFMS1 = Adafruit_MotorShield(0x60);
 // Connect stepper motors with 400 steps per revolution (1.8 degree)
-#if MOTOR_SHIELD_VERSION == 1
-
-static AF_Stepper m1(STEPS_PER_TURN, 1);  // to motor port #1 (M1 and M2)
-static AF_Stepper m2(STEPS_PER_TURN, 2);  // to motor port #2 (M3 and M4)
-
-#else  // MOTOR_SHIELD_VERSION == 2
-
 // Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-Adafruit_StepperMotor *m1 = AFMS.getStepper(STEPS_PER_TURN, 1);  // to motor port #1 (M1 and M2)
-Adafruit_StepperMotor *m2 = AFMS.getStepper(STEPS_PER_TURN, 2);  // to motor port #2 (M3 and M4)
+Adafruit_StepperMotor *m[4];
 
-#endif
+
+Axis a[4];  // for line()
+Axis atemp;  // for line()
+
 
 char buffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
-float px, py;  // location
+float px, py, pz, pe;  // location
 
 // speeds
 float fr=0;  // human version
@@ -115,10 +110,12 @@ void feedrate(float nfr) {
  * @input npx new position x
  * @input npy new position y
  */
-void position(float npx,float npy) {
+void position(float npx,float npy,float npz,float npe) {
   // here is a good place to add sanity tests
   px=npx;
   py=npy;
+  pz=npz;
+  pe=npe;
 }
 
 
@@ -128,86 +125,81 @@ void position(float npx,float npy) {
  * @input newy the destination y position
  **/
 void onestep(int motor,int direction) {
-  if(motor==1) {
 #ifdef VERBOSE
-    Serial.print('X');
+  char *letter="XYZE";
+  Serial.print(letter[motor]);
 #endif
-#if MOTOR_SHIELD_VERSION == 1
-      m1.onestep(direction);
-#else
-      m1->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
-#endif
-  } else {
-#ifdef VERBOSE
-    Serial.print('Y');
-#endif
-#if MOTOR_SHIELD_VERSION == 1
-      m2.onestep(direction);
-#else
-      m2->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
-#endif
-  }
+  m[motor]->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
 }
 
 
 void release() {
-#if MOTOR_SHIELD_VERSION == 1
-  m1.release();
-  m2.release();
-#else
-  m1->release();
-  m2->release();
-#endif
+  int i;
+  for(i=0;i<4;++i) {
+    m[i]->release();
+  }
 }
+
 
 /**
  * Uses bresenham's line algorithm to move both motors
  * @input newx the destination x position
  * @input newy the destination y position
  **/
-void line(float newx,float newy) {
-  long dx=newx-px;
-  long dy=newy-py;
-  int dirx=dx>0?1:-1;
-  int diry=dy>0?-1:1;  // because the motors are mounted in opposite directions
-  dx=abs(dx);
-  dy=abs(dy);
+void line(float newx,float newy,float newz,float newe) {
+  a[0].delta = newx-px;
+  a[1].delta = newy-py;
+  a[2].delta = newz-pz;
+  a[3].delta = newe-pe;
+  a[0].absdelta = abs(a[0].delta);
+  a[1].absdelta = abs(a[1].delta);
+  a[2].absdelta = abs(a[2].delta);
+  a[3].absdelta = abs(a[3].delta);
+  a[0].dir = a[0].delta > 0 ? 1:-1;
+  a[1].dir = a[1].delta > 0 ? -1:1;  // because the motors are mounted in opposite directions
+  a[2].dir = a[2].delta > 0 ? 1:-1;
+  a[3].dir = a[3].delta > 0 ? -1:1;  // because the motors are mounted in opposite directions
+  a[0].motor = 0;
+  a[1].motor = 1;
+  a[2].motor = 2;
+  a[3].motor = 3;
 
-  long i;
-  long over=0;
+  long i,j;
 
 #ifdef VERBOSE
   Serial.println(F("Start >"));
 #endif
 
-  if(dx>dy) {
-    for(i=0;i<dx;++i) {
-      onestep(1,dirx);
-      over+=dy;
-      if(over>=dx) {
-        over-=dx;
-        onestep(2,diry);
+  // sort the axies with the fastest mover at the front of the list
+  for(i=0;i<4;++i) {
+    for(j=i+1;j<4;++j) {
+      if(a[j].absdelta>a[i].absdelta) {
+        memcpy(&atemp,&a[i] ,sizeof(Axis));
+        memcpy(&a[i] ,&a[j] ,sizeof(Axis));
+        memcpy(&a[j] ,&atemp,sizeof(Axis));
       }
-      pause(step_delay);
     }
-  } else {
-    for(i=0;i<dy;++i) {
-      onestep(2,diry);
-      over+=dx;
-      if(over>=dy) {
-        over-=dy;
-        onestep(1,dirx);
+    a[i].over=0;
+  }
+  
+  for(i=0;i<a[0].absdelta;++i) {
+    onestep(a[0].motor,a[0].dir);
+    
+    for(j=1;j<4;++j) {
+      a[j].over += a[j].absdelta;
+      if(a[j].over >= a[0].absdelta) {
+        a[j].over -= a[0].absdelta;
+        onestep(a[j].motor,a[j].dir);
       }
-      pause(step_delay);
     }
+    pause(step_delay);
   }
 
 #ifdef VERBOSE
   Serial.println(F("< Done."));
 #endif
 
-  px=newx;
-  py=newy;
+  position(newx,newy,newz,newe);
 }
 
 
@@ -246,6 +238,8 @@ void output(char *code,float val) {
 void where() {
   output("X",px);
   output("Y",py);
+  output("Z",pz);
+  output("E",pe);
   output("F",fr);
   Serial.println(mode_abs?"ABS":"REL");
 } 
@@ -258,12 +252,11 @@ void help() {
   Serial.print(F("MixologyBot "));
   Serial.println(VERSION);
   Serial.println(F("Commands:"));
-  Serial.println(F("G00 [X(steps)] [Y(steps)] [F(feedrate)]; - linear move"));
-  Serial.println(F("G01 [X(steps)] [Y(steps)] [F(feedrate)]; - linear move"));
+  Serial.println(F("G00/G01 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)] [F(feedrate)]; - linear move"));
   Serial.println(F("G04 P[seconds]; - delay"));
   Serial.println(F("G90; - absolute mode"));
   Serial.println(F("G91; - relative mode"));
-  Serial.println(F("G92 [X(steps)] [Y(steps)]; - change logical position"));
+  Serial.println(F("G92 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)]; - change logical position"));
   Serial.println(F("M18; - disable motors"));
   Serial.println(F("M100; - this help message"));
   Serial.println(F("M114; - report position and feedrate"));
@@ -280,14 +273,18 @@ void processCommand() {
   case  1: // move linear
     feedrate(parsenumber('F',fr));
     line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py) );
+          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+          parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
   case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
     position( parsenumber('X',0),
-              parsenumber('Y',0) );
+              parsenumber('Y',0),
+              parsenumber('Z',0),
+              parsenumber('E',0) );
     break;
   default:  break;
   }
@@ -318,11 +315,17 @@ void ready() {
  */
 void setup() {
   Serial.begin(BAUD);  // open coms
+
+  AFMS0.begin(); // Start the shieldS
+  AFMS1.begin();
   
-  AFMS.begin();  // create with the default frequency 1.6KHz
-  
+  m[0] = AFMS0.getStepper(STEPS_PER_TURN, 1);
+  m[1] = AFMS0.getStepper(STEPS_PER_TURN, 2);
+  m[2] = AFMS1.getStepper(STEPS_PER_TURN, 1);
+  m[3] = AFMS1.getStepper(STEPS_PER_TURN, 2);
+
   help();  // say hello
-  position(0,0);  // set staring position
+  position(0,0,0,0);  // set staring position
   feedrate(200);  // set default speed
   ready();
 }

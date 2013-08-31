@@ -1,12 +1,25 @@
+#GcodeCNCDemo
+
 This is a simple demonstration of a 2-axis CNC machine using an Arduino UNO and the Adafruit Motor Shield v1 and v2.
 
-Be sure to adjust the following values before compiling your code:
+##Note
 
-//#define MOTOR_SHIELD_VERSION (1)  // change to your version number
-#define MOTOR_SHIELD_VERSION (2)  // Must choose one!
+Some of the files have define that must be set.
 
-//#define VERBOSE              (1)  // add to get a lot more serial output.
+MOTOR_SHIELD_VERSION (X) - change this to your version number
 
-#define BAUD                 (57600)  // How fast is the Arduino talking?
-#define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
+VERBOSE - define this to see how bresenham's line algo works even without steppers.
+
+BAUD (57600) - How fast is the Arduino talking?  Default for us is 57600.
+STEPS_PER_TURN (400) - depends on your stepper motor.  Mine are all 400.  Many are 200.
+
+##More
+
+For more info please see http://www.github.com/MarginallyClever/GcodeCNCDemo
+
+##Author
+
+http://marginallyclever.com
+Dan Royer
+2013-08-30
 
