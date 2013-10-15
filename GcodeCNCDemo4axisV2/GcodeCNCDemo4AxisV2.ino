@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
-// 6 Axis CNC Demo v2 - supports Adafruit motor shield v2
-// dan@marginallycelver.com 2013-09-07
+// 4 Axis CNC Demo v2 - supports Adafruit motor shield v2
+// dan@marginallycelver.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -15,10 +15,10 @@
 #define BAUD                 (57600)  // How fast is the Arduino talking?
 #define MAX_BUF              (64)  // What is the longest message Arduino can store?
 #define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY       (1500)
+#define MIN_STEP_DELAY       (50)
 #define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
 #define MIN_FEEDRATE         (0.01)
-#define NUM_AXIES            (6)
+
 
 //------------------------------------------------------------------------------
 // INCLUDES
@@ -48,23 +48,23 @@ typedef struct {
 // Initialize Adafruit stepper controller
 Adafruit_MotorShield AFMS0 = Adafruit_MotorShield(0x61);
 Adafruit_MotorShield AFMS1 = Adafruit_MotorShield(0x60);
-Adafruit_MotorShield AFMS2 = Adafruit_MotorShield(0x63);
 // Connect stepper motors with 400 steps per revolution (1.8 degree)
 // Create the motor shield object with the default I2C address
-Adafruit_StepperMotor *m[NUM_AXIES];
+Adafruit_StepperMotor *m[4];
 
 
-Axis a[NUM_AXIES];  // for line()
+Axis a[4];  // for line()
 Axis atemp;  // for line()
+
 
 char buffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
+float px, py, pz, pe;  // location
+
 // speeds
 float fr=0;  // human version
 long step_delay;  // machine version
-
-float px,py,pz,pu,pv,pw;  // position
 
 // settings
 char mode_abs=1;  // absolute mode?
@@ -110,14 +110,12 @@ void feedrate(float nfr) {
  * @input npx new position x
  * @input npy new position y
  */
-void position(float npx,float npy,float npz,float npu,float npv,float npw) {
+void position(float npx,float npy,float npz,float npe) {
   // here is a good place to add sanity tests
   px=npx;
   py=npy;
   pz=npz;
-  pu=npu;
-  pv=npv;
-  pw=npw;
+  pe=npe;
 }
 
 
@@ -128,7 +126,7 @@ void position(float npx,float npy,float npz,float npu,float npv,float npw) {
  **/
 void onestep(int motor,int direction) {
 #ifdef VERBOSE
-  char *letter="UVWXYZ";
+  char *letter="XYZE";
   Serial.print(letter[motor]);
 #endif
   m[motor]->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
@@ -137,7 +135,7 @@ void onestep(int motor,int direction) {
 
 void release() {
   int i;
-  for(i=0;i<NUM_AXIES;++i) {
+  for(i=0;i<4;++i) {
     m[i]->release();
   }
 }
@@ -148,30 +146,33 @@ void release() {
  * @input newx the destination x position
  * @input newy the destination y position
  **/
-void line(float newx,float newy,float newz,float newu,float newv,float neww) {
+void line(float newx,float newy,float newz,float newe) {
   a[0].delta = newx-px;
   a[1].delta = newy-py;
   a[2].delta = newz-pz;
-  a[3].delta = newu-pu;
-  a[4].delta = newv-pv;
-  a[5].delta = neww-pw;
-  
+  a[3].delta = newe-pe;
+  a[0].absdelta = abs(a[0].delta);
+  a[1].absdelta = abs(a[1].delta);
+  a[2].absdelta = abs(a[2].delta);
+  a[3].absdelta = abs(a[3].delta);
+  a[0].dir = a[0].delta > 0 ? 1:-1;
+  a[1].dir = a[1].delta > 0 ? -1:1;  // because the motors are mounted in opposite directions
+  a[2].dir = a[2].delta > 0 ? 1:-1;
+  a[3].dir = a[3].delta > 0 ? -1:1;  // because the motors are mounted in opposite directions
+  a[0].motor = 0;
+  a[1].motor = 1;
+  a[2].motor = 2;
+  a[3].motor = 3;
+
   long i,j;
 
-  for(i=0;i<NUM_AXIES;++i) {
-    a[i].motor=i;
-    a[i].dir=a[i].delta > 0 ? 1:-1;
-    if(i%2) a[i].dir=-a[i].dir;  // because the motors are mounted in opposite directions
-    a[i].absdelta = abs(a[i].delta);
-  }
-  
 #ifdef VERBOSE
   Serial.println(F("Start >"));
 #endif
 
   // sort the axies with the fastest mover at the front of the list
-  for(i=0;i<NUM_AXIES;++i) {
-    for(j=i+1;j<NUM_AXIES;++j) {
+  for(i=0;i<4;++i) {
+    for(j=i+1;j<4;++j) {
       if(a[j].absdelta>a[i].absdelta) {
         memcpy(&atemp,&a[i] ,sizeof(Axis));
         memcpy(&a[i] ,&a[j] ,sizeof(Axis));
@@ -184,7 +185,7 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
   for(i=0;i<a[0].absdelta;++i) {
     onestep(a[0].motor,a[0].dir);
     
-    for(j=1;j<NUM_AXIES;++j) {
+    for(j=1;j<4;++j) {
       a[j].over += a[j].absdelta;
       if(a[j].over >= a[0].absdelta) {
         a[j].over -= a[0].absdelta;
@@ -198,7 +199,7 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
   Serial.println(F("< Done."));
 #endif
 
-  position(newx,newy,newz,newu,newv,neww);
+  position(newx,newy,newz,newe);
 }
 
 
@@ -238,9 +239,7 @@ void where() {
   output("X",px);
   output("Y",py);
   output("Z",pz);
-  output("U",pu);
-  output("V",pv);
-  output("W",pw);
+  output("E",pe);
   output("F",fr);
   Serial.println(mode_abs?"ABS":"REL");
 } 
@@ -250,14 +249,14 @@ void where() {
  * display helpful information
  */
 void help() {
-  Serial.print(F("MixologyBot "));
+  Serial.print(F("GcodeCNCDemo4AxisV2 "));
   Serial.println(VERSION);
   Serial.println(F("Commands:"));
-  Serial.println(F("G00/G01 [X/Y/Z/U/V/W(steps)] [F(feedrate)]; - linear move"));
+  Serial.println(F("G00/G01 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)] [F(feedrate)]; - linear move"));
   Serial.println(F("G04 P[seconds]; - delay"));
   Serial.println(F("G90; - absolute mode"));
   Serial.println(F("G91; - relative mode"));
-  Serial.println(F("G92 [X/Y/Z/U/V/W(steps)]; - change logical position"));
+  Serial.println(F("G92 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)]; - change logical position"));
   Serial.println(F("M18; - disable motors"));
   Serial.println(F("M100; - this help message"));
   Serial.println(F("M114; - report position and feedrate"));
@@ -276,9 +275,7 @@ void processCommand() {
     line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
           parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
-          parsenumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
-          parsenumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw) );
+          parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
   case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
@@ -287,9 +284,7 @@ void processCommand() {
     position( parsenumber('X',0),
               parsenumber('Y',0),
               parsenumber('Z',0),
-              parsenumber('U',0),
-              parsenumber('V',0),
-              parsenumber('W',0) );
+              parsenumber('E',0) );
     break;
   default:  break;
   }
@@ -321,19 +316,16 @@ void ready() {
 void setup() {
   Serial.begin(BAUD);  // open coms
 
-  AFMS0.begin(); // Start the shields
+  AFMS0.begin(); // Start the shieldS
   AFMS1.begin();
-  AFMS2.begin();
   
   m[0] = AFMS0.getStepper(STEPS_PER_TURN, 1);
   m[1] = AFMS0.getStepper(STEPS_PER_TURN, 2);
   m[2] = AFMS1.getStepper(STEPS_PER_TURN, 1);
   m[3] = AFMS1.getStepper(STEPS_PER_TURN, 2);
-  m[4] = AFMS2.getStepper(STEPS_PER_TURN, 1);
-  m[5] = AFMS2.getStepper(STEPS_PER_TURN, 2);
 
   help();  // say hello
-  position(0,0,0,0,0,0);  // set staring position
+  position(0,0,0,0);  // set staring position
   feedrate(200);  // set default speed
   ready();
 }
@@ -369,7 +361,7 @@ void loop() {
 * the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
-* DrawbotGUI is distributed in the hope that it will be useful,
+* GcodeCNCDemo is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 * GNU General Public License for more details.

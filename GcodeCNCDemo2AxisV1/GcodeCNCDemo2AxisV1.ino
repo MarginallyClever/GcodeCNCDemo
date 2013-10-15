@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// 2 Axis CNC Demo v2 - supports Adafruit motor shields v1 and v2
+// 2 Axis CNC Demo v1 - only supports motor shield v1
 // dan@marginallycelver.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
@@ -9,58 +9,27 @@
 //------------------------------------------------------------------------------
 // CONSTANTS
 //------------------------------------------------------------------------------
-//#define MOTOR_SHIELD_VERSION (1)  // change to your version number
-#define MOTOR_SHIELD_VERSION (2)  // Must choose one!
-
-//#define VERBOSE              (1)  // add to get a lot more serial output.
-
-#define VERSION              (2)  // firmware version
-#define BAUD                 (57600)  // How fast is the Arduino talking?
-#define MAX_BUF              (64)  // What is the longest message Arduino can store?
-#define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY       (3500)
-#define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
-#define MIN_FEEDRATE         (0.01)
-
-#ifndef MOTOR_SHIELD_VERSION
-#error MOTOR_SHIELD_VERSION must be defined!
-#endif
+#define VERSION        (1)  // firmware version
+#define BAUD           (57600)  // How fast is the Arduino talking?
+#define MAX_BUF        (64)  // What is the longest message Arduino can store?
+#define STEPS_PER_TURN (400)  // depends on your stepper motor.  most are 200.
+#define MIN_STEP_DELAY (3500)
+#define MAX_FEEDRATE   (1000000/MIN_STEP_DELAY)
+#define MIN_FEEDRATE   (0.01)
 
 
 //------------------------------------------------------------------------------
 // INCLUDES
 //------------------------------------------------------------------------------
-#if MOTOR_SHIELD_VERSION == 1
-
 #include <AFMotorDrawbot.h>
-
-#else  // MOTOR_SHIELD_VERSION == 2
-
-#include <Wire.h>
-#include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_PWMServoDriver.h"
-
-#endif
 
 
 //------------------------------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------------------------------
 // Initialize Adafruit stepper controller
-// Connect stepper motors with 400 steps per revolution (1.8 degree)
-#if MOTOR_SHIELD_VERSION == 1
-
-static AF_Stepper m1(STEPS_PER_TURN, 1);  // to motor port #1 (M1 and M2)
-static AF_Stepper m2(STEPS_PER_TURN, 2);  // to motor port #2 (M3 and M4)
-
-#else  // MOTOR_SHIELD_VERSION == 2
-
-// Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-Adafruit_StepperMotor *m1 = AFMS.getStepper(STEPS_PER_TURN, 1);  // to motor port #1 (M1 and M2)
-Adafruit_StepperMotor *m2 = AFMS.getStepper(STEPS_PER_TURN, 2);  // to motor port #2 (M3 and M4)
-
-#endif
+static AF_Stepper m1((int)STEPS_PER_TURN, 1);
+static AF_Stepper m2((int)STEPS_PER_TURN, 2);
 
 char buffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
@@ -123,44 +92,6 @@ void position(float npx,float npy) {
 
 
 /**
- * Supports movement with both styles of Motor Shield
- * @input newx the destination x position
- * @input newy the destination y position
- **/
-void onestep(int motor,int direction) {
-  if(motor==1) {
-#ifdef VERBOSE
-    Serial.print('X');
-#endif
-#if MOTOR_SHIELD_VERSION == 1
-      m1.onestep(direction);
-#else
-      m1->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
-#endif
-  } else {
-#ifdef VERBOSE
-    Serial.print('Y');
-#endif
-#if MOTOR_SHIELD_VERSION == 1
-      m2.onestep(direction);
-#else
-      m2->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
-#endif
-  }
-}
-
-
-void release() {
-#if MOTOR_SHIELD_VERSION == 1
-  m1.release();
-  m2.release();
-#else
-  m1->release();
-  m2->release();
-#endif
-}
-
-/**
  * Uses bresenham's line algorithm to move both motors
  * @input newx the destination x position
  * @input newy the destination y position
@@ -176,35 +107,27 @@ void line(float newx,float newy) {
   long i;
   long over=0;
 
-#ifdef VERBOSE
-  Serial.println(F("Start >"));
-#endif
-
   if(dx>dy) {
     for(i=0;i<dx;++i) {
-      onestep(1,dirx);
+      m1.onestep(dirx);
       over+=dy;
       if(over>=dx) {
         over-=dx;
-        onestep(2,diry);
+        m2.onestep(diry);
       }
       pause(step_delay);
     }
   } else {
     for(i=0;i<dy;++i) {
-      onestep(2,diry);
+      m2.onestep(diry);
       over+=dx;
       if(over>=dy) {
         over-=dy;
-        onestep(1,dirx);
+        m1.onestep(dirx);
       }
       pause(step_delay);
     }
   }
-
-#ifdef VERBOSE
-  Serial.println(F("< Done."));
-#endif
 
   px=newx;
   py=newy;
@@ -295,7 +218,8 @@ void processCommand() {
   cmd = parsenumber('M',-1);
   switch(cmd) {
   case 18:  // disable motors
-    release();
+    m1.release();
+    m2.release();
     break;
   case 100:  help();  break;
   case 114:  where();  break;
@@ -318,9 +242,6 @@ void ready() {
  */
 void setup() {
   Serial.begin(BAUD);  // open coms
-  
-  AFMS.begin();  // create with the default frequency 1.6KHz
-  
   help();  // say hello
   position(0,0);  // set staring position
   feedrate(200);  // set default speed
@@ -358,7 +279,7 @@ void loop() {
 * the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
-* DrawbotGUI is distributed in the hope that it will be useful,
+* GcodeCNCDemo is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 * GNU General Public License for more details.
