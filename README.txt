@@ -13,6 +13,11 @@ VERBOSE - define this to see how bresenham's line algo works even without steppe
 BAUD (57600) - How fast is the Arduino talking?  Default for us is 57600.
 STEPS_PER_TURN (400) - depends on your stepper motor.  Mine are all 400.  Many are 200.
 
+##Prerequisites
+
+AFMotor: https://github.com/adafruit/Adafruit-Motor-Shield-library
+Arduino: http://arduino.cc/
+
 ##More
 
 For more info please see http://www.github.com/MarginallyClever/GcodeCNCDemo

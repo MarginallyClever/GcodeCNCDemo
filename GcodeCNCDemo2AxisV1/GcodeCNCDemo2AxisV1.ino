@@ -13,8 +13,8 @@
 #define BAUD           (57600)  // How fast is the Arduino talking?
 #define MAX_BUF        (64)  // What is the longest message Arduino can store?
 #define STEPS_PER_TURN (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY (3500)
-#define MAX_FEEDRATE   (1000000/MIN_STEP_DELAY)
+#define MIN_STEP_DELAY (50.0)
+#define MAX_FEEDRATE   (1000000.0/MIN_STEP_DELAY)
 #define MIN_FEEDRATE   (0.01)
 
 
@@ -178,7 +178,7 @@ void where() {
  * display helpful information
  */
 void help() {
-  Serial.print(F("MixologyBot "));
+  Serial.print(F("GcodeCNCDemo2AxisV1 "));
   Serial.println(VERSION);
   Serial.println(F("Commands:"));
   Serial.println(F("G00 [X(steps)] [Y(steps)] [F(feedrate)]; - linear move"));
@@ -244,7 +244,7 @@ void setup() {
   Serial.begin(BAUD);  // open coms
   help();  // say hello
   position(0,0);  // set staring position
-  feedrate(200);  // set default speed
+  feedrate((MAX_FEEDRATE + MIN_FEEDRATE)/2);  // set default speed
   ready();
 }
 
