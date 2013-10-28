@@ -18,6 +18,7 @@
 #define MIN_STEP_DELAY       (50)
 #define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
 #define MIN_FEEDRATE         (0.01)
+#define NUM_AXIES            (4)
 
 
 //------------------------------------------------------------------------------
@@ -37,7 +38,6 @@ typedef struct {
   long absdelta;
   int dir;
   long over;
-  int motor;
 } Axis;
 
 
@@ -151,45 +151,27 @@ void line(float newx,float newy,float newz,float newe) {
   a[1].delta = newy-py;
   a[2].delta = newz-pz;
   a[3].delta = newe-pe;
-  a[0].absdelta = abs(a[0].delta);
-  a[1].absdelta = abs(a[1].delta);
-  a[2].absdelta = abs(a[2].delta);
-  a[3].absdelta = abs(a[3].delta);
-  a[0].dir = a[0].delta > 0 ? 1:-1;
-  a[1].dir = a[1].delta > 0 ? -1:1;  // because the motors are mounted in opposite directions
-  a[2].dir = a[2].delta > 0 ? 1:-1;
-  a[3].dir = a[3].delta > 0 ? -1:1;  // because the motors are mounted in opposite directions
-  a[0].motor = 0;
-  a[1].motor = 1;
-  a[2].motor = 2;
-  a[3].motor = 3;
+  
+  long i,j,maxsteps=0;
 
-  long i,j;
+  for(i=0;i<NUM_AXIES;++i) {
+    a[i].absdelta = abs(a[i].delta);
+    a[i].dir = a[i].delta > 0 ? 1:-1;
+    if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
+    a[i].over=0;
+  }
+  
 
 #ifdef VERBOSE
   Serial.println(F("Start >"));
 #endif
-
-  // sort the axies with the fastest mover at the front of the list
-  for(i=0;i<4;++i) {
-    for(j=i+1;j<4;++j) {
-      if(a[j].absdelta>a[i].absdelta) {
-        memcpy(&atemp,&a[i] ,sizeof(Axis));
-        memcpy(&a[i] ,&a[j] ,sizeof(Axis));
-        memcpy(&a[j] ,&atemp,sizeof(Axis));
-      }
-    }
-    a[i].over=0;
-  }
   
-  for(i=0;i<a[0].absdelta;++i) {
-    onestep(a[0].motor,a[0].dir);
-    
-    for(j=1;j<4;++j) {
+  for( i=0; i<maxsteps; ++i ) {
+    for(j=0;j<NUM_AXIES;++j) {
       a[j].over += a[j].absdelta;
       if(a[j].over >= a[0].absdelta) {
         a[j].over -= a[0].absdelta;
-        onestep(a[j].motor,a[j].dir);
+        onestep(j,a[j].dir);
       }
     }
     pause(step_delay);

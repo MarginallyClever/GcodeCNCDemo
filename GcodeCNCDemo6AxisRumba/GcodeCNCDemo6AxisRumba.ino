@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
-// 6 Axis CNC Demo v2 - supports Adafruit motor shield v2
-// dan@marginallycelver.com 2013-09-07
+// 6 Axis CNC Demo Rumba - supports raprapdiscount RUMBA controller
+// dan@marginallycelver.com 2013-10-28
+// RUMBA should be treated like a MEGA 2560 Arduino.
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -20,41 +21,32 @@
 #define MIN_FEEDRATE         (0.01)
 #define NUM_AXIES            (6)
 
-//------------------------------------------------------------------------------
-// INCLUDES
-//------------------------------------------------------------------------------
-#include <Wire.h>
-#include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_PWMServoDriver.h"
-
 
 //------------------------------------------------------------------------------
 // STRUCTS
 //------------------------------------------------------------------------------
 // for line()
 typedef struct {
-  long delta;
+  long delta;  // number of steps to move
   long absdelta;
-  int dir;
-  long over;
+  long over;  // for dx/dy bresenham calculations
 } Axis;
 
+
+typedef struct {
+  int step_pin;
+  int dir_pin;
+  int enable_pin;
+  int limit_switch_pin;
+} Motor;
 
 
 //------------------------------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------------------------------
-// Initialize Adafruit stepper controller
-Adafruit_MotorShield AFMS0 = Adafruit_MotorShield(0x61);
-Adafruit_MotorShield AFMS1 = Adafruit_MotorShield(0x60);
-Adafruit_MotorShield AFMS2 = Adafruit_MotorShield(0x63);
-// Connect stepper motors with 400 steps per revolution (1.8 degree)
-// Create the motor shield object with the default I2C address
-Adafruit_StepperMotor *m[NUM_AXIES];
-
-
 Axis a[NUM_AXIES];  // for line()
 Axis atemp;  // for line()
+Motor motors[NUM_AXIES];
 
 char buffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
@@ -125,24 +117,14 @@ void position(float npx,float npy,float npz,float npu,float npv,float npw) {
  * @input newx the destination x position
  * @input newy the destination y position
  **/
-void onestep(int motor,int direction) {
+void onestep(int motor) {
 #ifdef VERBOSE
   char *letter="UVWXYZ";
   Serial.print(letter[motor]);
 #endif
-//  m[motor]->onestep(direction>0?FORWARD:BACKWARD,MICROSTEP);
-  m[motor]->onestep(direction>0?FORWARD:BACKWARD,INTERLEAVE);
-}
-
-
-/**
- * Releases the power on the motors
- **/
-void release() {
-  int i;
-  for(i=0;i<NUM_AXIES;++i) {
-    m[i]->release();
-  }
+  
+  digitalWrite(motors[motor].step_pin,HIGH);
+  digitalWrite(motors[motor].step_pin,LOW);
 }
 
 
@@ -162,16 +144,12 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
   long i,j,maxsteps=0;
 
   for(i=0;i<NUM_AXIES;++i) {
-    a[i].dir=a[i].delta > 0 ? 1:-1;
     a[i].absdelta = abs(a[i].delta);
-    if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
     a[i].over=0;
+    if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
+    // set the direction once per movement
+    digitalWrite(motors[i].dir_pin,a[i].delta>0?HIGH:LOW);
   }
-
-  a[0].dir=-a[0].dir;  // because the motors are mounted in opposite directions
-  a[1].dir=-a[1].dir;  // because the motors are mounted in opposite directions
-  a[2].dir=-a[2].dir;  // because the motors are mounted in opposite directions
-
   
 #ifdef VERBOSE
   Serial.println(F("Start >"));
@@ -182,7 +160,7 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
       a[j].over += a[j].absdelta;
       if(a[j].over >= a[0].absdelta) {
         a[j].over -= a[0].absdelta;
-        onestep(j,a[j].dir);
+        onestep(j);
       }
     }
     pause(step_delay);
@@ -290,9 +268,8 @@ void processCommand() {
 
   cmd = parsenumber('M',-1);
   switch(cmd) {
-  case 18:  // disable motors
-    release();
-    break;
+  case 17:  motor_enable();  break;
+  case 18:  motor_disable();  break;
   case 100:  help();  break;
   case 114:  where();  break;
   default:  break;
@@ -310,25 +287,77 @@ void ready() {
 
 
 /**
+ * set up the pins for each motor
+ */
+void motor_setup() {
+  motors[0].step_pin=17;
+  motors[0].dir_pin=16;
+  motors[0].enable_pin=48;
+  motors[0].limit_switch_pin=37;
+
+  motors[1].step_pin=54;
+  motors[1].dir_pin=47;
+  motors[1].enable_pin=55;
+  motors[1].limit_switch_pin=36;
+
+  motors[2].step_pin=57;
+  motors[2].dir_pin=56;
+  motors[2].enable_pin=62;
+  motors[2].limit_switch_pin=35;
+
+  motors[3].step_pin=23;
+  motors[3].dir_pin=22;
+  motors[3].enable_pin=27;
+  motors[3].limit_switch_pin=34;
+
+  motors[4].step_pin=26;
+  motors[4].dir_pin=25;
+  motors[4].enable_pin=24;
+  motors[4].limit_switch_pin=33;
+
+  motors[5].step_pin=29;
+  motors[5].dir_pin=28;
+  motors[5].enable_pin=39;
+  motors[5].limit_switch_pin=32;
+  
+  int i;
+  for(i=0;i<NUM_AXIES;++i) {  
+    // set the motor pin & scale
+    pinMode(motors[i].step_pin,OUTPUT);
+    pinMode(motors[i].dir_pin,OUTPUT);
+    pinMode(motors[i].enable_pin,OUTPUT);
+  }
+}
+
+
+void motor_enable() {
+  int i;
+  for(i=0;i<NUM_AXIES;++i) {  
+    digitalWrite(motors[i].enable_pin,LOW);
+  }
+}
+
+
+void motor_disable() {
+  int i;
+  for(i=0;i<NUM_AXIES;++i) {  
+    digitalWrite(motors[i].enable_pin,HIGH);
+  }
+}
+
+
+/**
  * First thing this machine does on startup.  Runs only once.
  */
 void setup() {
   Serial.begin(BAUD);  // open coms
 
-  AFMS0.begin(); // Start the shields
-  AFMS1.begin();
-  AFMS2.begin();
+  motor_setup();
+  motor_enable();
   
-  m[0] = AFMS0.getStepper(STEPS_PER_TURN, 1);
-  m[1] = AFMS0.getStepper(STEPS_PER_TURN, 2);
-  m[2] = AFMS1.getStepper(STEPS_PER_TURN, 1);
-  m[3] = AFMS1.getStepper(STEPS_PER_TURN, 2);
-  m[4] = AFMS2.getStepper(STEPS_PER_TURN, 1);
-  m[5] = AFMS2.getStepper(STEPS_PER_TURN, 2);
-
   help();  // say hello
   position(0,0,0,0,0,0);  // set staring position
-  feedrate(200);  // set default speed
+  feedrate(1000);  // set default speed
   ready();
 }
 
