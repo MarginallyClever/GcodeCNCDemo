@@ -119,7 +119,7 @@ void position(float npx,float npy,float npz,float npu,float npv,float npw) {
  **/
 void onestep(int motor) {
 #ifdef VERBOSE
-  char *letter="UVWXYZ";
+  char *letter="XYZUVW";
   Serial.print(letter[motor]);
 #endif
   
@@ -157,9 +157,10 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
   
   for( i=0; i<maxsteps; ++i ) {
     for(j=0;j<NUM_AXIES;++j) {
+      if(a[j].absdelta==0) continue;
       a[j].over += a[j].absdelta;
-      if(a[j].over >= a[0].absdelta) {
-        a[j].over -= a[0].absdelta;
+      if(a[j].over >= a[j].absdelta) {
+        a[j].over -= a[j].absdelta;
         onestep(j);
       }
     }
