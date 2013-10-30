@@ -2,16 +2,20 @@
 
 This is a simple demonstration of a 2-axis CNC machine using an Arduino UNO and the Adafruit Motor Shield v1 and v2.
 
+##Which files should I use?
+
+If you have an Adafruit Motor Shield v1 then use GcodeCNCDemo2AxisV1.
+If you have an Adafruit Motor Shield v2 then use GcodeCNCDemo2AxisV2, GcodeCNCDemo4AxisV2, or GcodeCNCDemo6AxisV2.
+If you have a RUMBA controller then use GcodeCNCDemo6AxisRumba.
+
 ##Note
 
-Some of the files have define that must be set.
+You can use any of of the *V2 with an Adafruit Motor Shield v2.
+With all V2 code you will have to change the address of the board.  Look for
 
-MOTOR_SHIELD_VERSION (X) - change this to your version number
+  Adafruit_MotorShield AFMS0 = Adafruit_MotorShield(0x61);
 
-VERBOSE - define this to see how bresenham's line algo works even without steppers.
-
-BAUD (57600) - How fast is the Arduino talking?  Default for us is 57600.
-STEPS_PER_TURN (400) - depends on your stepper motor.  Mine are all 400.  Many are 200.
+and change the 0x61 to the address of your shield.
 
 ##Prerequisites
 
@@ -20,7 +24,9 @@ Arduino: http://arduino.cc/
 
 ##More
 
-For more info please see http://www.github.com/MarginallyClever/GcodeCNCDemo
+For the latest version please visit http://www.github.com/MarginallyClever/GcodeCNCDemo
+For more info on Adafruit shields please visit adafruit.com
+For more info on RUMBA controllers please visit http://reprap.org/wiki/RUMBA
 
 ##Author
 
