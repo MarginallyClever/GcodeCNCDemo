@@ -168,10 +168,9 @@ void line(float newx,float newy,float newz,float newe) {
   
   for( i=0; i<maxsteps; ++i ) {
     for(j=0;j<NUM_AXIES;++j) {
-      if(a[j].absdelta==0) continue;
       a[j].over += a[j].absdelta;
-      if(a[j].over >= a[j].absdelta) {
-        a[j].over -= a[j].absdelta;
+      if(a[j].over >= maxsteps) {
+        a[j].over -= maxsteps;
         onestep(j,a[j].dir);
       }
     }
