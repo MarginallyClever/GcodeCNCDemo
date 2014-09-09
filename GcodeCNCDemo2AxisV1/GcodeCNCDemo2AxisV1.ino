@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// 2 Axis CNC Demo v1 - only supports motor shield v1
+// 2 Axis CNC Demo v1 - only supports adafruit motor shield v1
 // dan@marginallycelver.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
@@ -14,8 +14,8 @@
 #define MAX_BUF        (64)  // What is the longest message Arduino can store?
 #define STEPS_PER_TURN (400)  // depends on your stepper motor.  most are 200.
 #define MIN_STEP_DELAY (50.0)
-#define MAX_FEEDRATE   (1000000.0/MIN_STEP_DELAY)
-#define MIN_FEEDRATE   (0.01)
+#define MAX_FEEDRATE   (10000)  // steps/min
+#define MIN_FEEDRATE   (1)  // steps/min
 
 
 //------------------------------------------------------------------------------
@@ -38,11 +38,14 @@ float px, py;  // location
 
 // speeds
 float fr=0;  // human version
-long step_delay;  // machine version
+// machine version
+long step_delay_ms;
+long step_delay_us;
 
 // settings
 char mode_abs=1;  // absolute mode?
 
+long line_number=0;
 
 //------------------------------------------------------------------------------
 // METHODS
@@ -53,9 +56,16 @@ char mode_abs=1;  // absolute mode?
  * delay for the appropriate number of microseconds
  * @input ms how many milliseconds to wait
  */
-void pause(long ms) {
-  delay(ms/1000);
-  delayMicroseconds(ms%1000);  // delayMicroseconds doesn't work for values > ~16k.
+void pause(long us) {
+  // delayMicroseconds doesn't work for values > ~16k.
+  delay(us/1000);
+  delayMicroseconds(us%1000);  
+}
+
+
+void tick() {
+  delay(step_delay_ms);
+  delayMicroseconds(step_delay_us);
 }
 
 
@@ -74,7 +84,11 @@ void feedrate(float nfr) {
     Serial.println(F("steps/s."));
     return;
   }
-  step_delay = 1000000.0/nfr;
+  
+  long us_per_min = 60 * 1000 * 1000;
+  long x = us_per_min / nfr;
+  step_delay_ms = x / 1000;
+  step_delay_us = x % 1000;
   fr=nfr;
 }
 
@@ -115,7 +129,7 @@ void line(float newx,float newy) {
         over-=dx;
         m2.onestep(diry);
       }
-      pause(step_delay);
+      tick();
     }
   } else {
     for(i=0;i<dy;++i) {
@@ -125,7 +139,7 @@ void line(float newx,float newy) {
         over-=dy;
         m1.onestep(dirx);
       }
-      pause(step_delay);
+      tick();
     }
   }
 
@@ -193,11 +207,64 @@ void help() {
 }
 
 
+void motor_disable() {
+  m1.release();
+  m2.release();
+}
+
+
+// one step will "catch" motors.  so go one forward and one back.
+void motor_enable() {
+   m1.onestep(1);
+   m1.onestep(-1);
+
+   m2.onestep(1);
+   m2.onestep(-1);
+}
+
+
 /**
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  // blank lines
+  if(buffer[0]==';') return;
+  
+  long cmd;
+  
+  // is there a line number?
+  cmd=parsenumber('N',-1);
+  if(cmd!=-1 && buffer[0]=='N') {  // line number must appear first on the line
+    if( cmd != line_number ) {
+      // wrong line number error
+      Serial.print(F("BADLINENUM "));
+      Serial.println(line_number);
+      return;
+    }
+  
+    // is there a checksum?
+    if(strchr(buffer,'*')!=0) {
+      // yes.  is it valid?
+      char checksum=0;
+      int c=0;
+      while(buffer[c]!='*') checksum ^= buffer[c++];
+      c++; // skip *
+      int against = strtod(buffer+c,NULL);
+      if( checksum != against ) {
+        Serial.print(F("BADCHECKSUM "));
+        Serial.println(line_number);
+        return;
+      } 
+    } else {
+      Serial.print(F("NOCHECKSUM "));
+      Serial.println(line_number);
+      return;
+    }
+    
+    line_number++;
+  }
+
+  cmd = parsenumber('G',-1);
   switch(cmd) {
   case  0: // move linear
   case  1: // move linear
@@ -205,7 +272,7 @@ void processCommand() {
     line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
           parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py) );
     break;
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parsenumber('S',0) + parsenumber('P',0)*1000.0f);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
@@ -217,11 +284,10 @@ void processCommand() {
 
   cmd = parsenumber('M',-1);
   switch(cmd) {
-  case 18:  // disable motors
-    m1.release();
-    m2.release();
-    break;
+  case 17:  motor_enable();  break;
+  case 18:  motor_disable();  break;
   case 100:  help();  break;
+  case 110:  line_number = parsenumber('N',line_number);  break;
   case 114:  where();  break;
   default:  break;
   }
@@ -256,17 +322,16 @@ void loop() {
   // listen for serial commands
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
+    if(c=='\r') continue;
     Serial.print(c);  // repeat it back so I know you got the message
     if(sofar<MAX_BUF) buffer[sofar++]=c;  // store it
-    if(buffer[sofar-1]==';') break;  // entire message received
-  }
-
-  if(sofar>0 && buffer[sofar-1]==';') {
-    // we got a message and it ends with a semicolon
-    buffer[sofar]=0;  // end the buffer so string functions work right
-    Serial.print(F("\r\n"));  // echo a return character for humans
-    processCommand();  // do something with the command
-    ready();
+    if( c =='\n') {  // entire message received
+      // we got a message and it ends with a semicolon
+      buffer[sofar]=0;  // end the buffer so string functions work right
+      Serial.print(F("\r\n"));  // echo a return character for humans
+      processCommand();  // do something with the command
+      ready();
+    }
   }
 }
 
