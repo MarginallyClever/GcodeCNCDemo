@@ -8,6 +8,12 @@ If you have an Adafruit Motor Shield v1 then use GcodeCNCDemo2AxisV1.
 If you have an Adafruit Motor Shield v2 then use GcodeCNCDemo2AxisV2, GcodeCNCDemo4AxisV2, or GcodeCNCDemo6AxisV2.
 If you have a RUMBA controller then use GcodeCNCDemo6AxisRumba.
 
+##Sending whole files
+
+So you've used a demo to make a CNC machine, and now you want to deliver a whole file full of gcode.
+
+See our sister project, the improved Arduino serial monitor: https://github.com/MarginallyClever/gcodesender
+
 ##Note
 
 You can use any of of the *V2 with an Adafruit Motor Shield v2.
