@@ -26,6 +26,13 @@
 #endif
 
 
+// for arc directions
+#define ARC_CW          (1)
+#define ARC_CCW         (-1)
+// Arcs are split into many line segments.  How long are the segments?
+#define MM_PER_SEGMENT  (10)
+
+
 //------------------------------------------------------------------------------
 // INCLUDES
 //------------------------------------------------------------------------------
@@ -226,6 +233,61 @@ void line(float newx,float newy) {
 }
 
 
+// returns angle of dy/dx as a value from 0...2PI
+static float atan3(float dy,float dx) {
+  float a=atan2(dy,dx);
+  if(a<0) a=(PI*2.0)+a;
+  return a;
+}
+
+
+// This method assumes the limits have already been checked.
+// This method assumes the start and end radius match.
+// This method assumes arcs are not >180 degrees (PI radians)
+// cx/cy - center of circle
+// x/y - end position
+// dir - ARC_CW or ARC_CCW to control direction of arc
+static void arc(float cx,float cy,float x,float y,float dir) {
+  // get radius
+  float dx = px - cx;
+  float dy = py - cy;
+  float radius=sqrt(dx*dx+dy*dy);
+
+  // find angle of arc (sweep)
+  float angle1=atan3(dy,dx);
+  float angle2=atan3(y-cy,x-cx);
+  float theta=angle2-angle1;
+  
+  if(dir>0 && theta<0) angle2+=2*PI;
+  else if(dir<0 && theta>0) angle1+=2*PI;
+  
+  theta=angle2-angle1;
+  
+  // get length of arc
+  // float circ=PI*2.0*radius;
+  // float len=theta*circ/(PI*2.0);
+  // simplifies to
+  float len = abs(theta) * radius;
+
+  int i, segments = ceil( len * MM_PER_SEGMENT );
+ 
+  float nx, ny, angle3, scale;
+
+  for(i=0;i<segments;++i) {
+    // interpolate around the arc
+    scale = ((float)i)/((float)segments);
+    
+    angle3 = ( theta * scale ) + angle1;
+    nx = cx + cos(angle3) * radius;
+    ny = cy + sin(angle3) * radius;
+    // send it to the planner
+    line(nx,ny);
+  }
+  
+  line(x,y);
+}
+
+
 /**
  * Look for character /code/ in the buffer and read the float that immediately follows it.
  * @return the value found.  If nothing is found, /val/ is returned.
@@ -273,8 +335,10 @@ void help() {
   Serial.print(F("GcodeCNCDemo2AxisV2 "));
   Serial.println(VERSION);
   Serial.println(F("Commands:"));
-  Serial.println(F("G00 [X(steps)] [Y(steps)] [F(feedrate)]; - linear move"));
-  Serial.println(F("G01 [X(steps)] [Y(steps)] [F(feedrate)]; - linear move"));
+  Serial.println(F("G00 [X(steps)] [Y(steps)] [F(feedrate)]; - line"));
+  Serial.println(F("G01 [X(steps)] [Y(steps)] [F(feedrate)]; - line"));
+  Serial.println(F("G02 [X(steps)] [Y(steps)] [I(steps)] [J(steps)] [F(feedrate)]; - clockwise arc"));
+  Serial.println(F("G03 [X(steps)] [Y(steps)] [I(steps)] [J(steps)] [F(feedrate)]; - counter-clockwise arc"));
   Serial.println(F("G04 P[seconds]; - delay"));
   Serial.println(F("G90; - absolute mode"));
   Serial.println(F("G91; - relative mode"));
@@ -328,12 +392,23 @@ void processCommand() {
 
   cmd = parsenumber('G',-1);
   switch(cmd) {
-  case  0: // move linear
-  case  1: // move linear
+  case  0: 
+  case  1: { // line
     feedrate(parsenumber('F',fr));
     line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
           parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py) );
     break;
+    }
+  case 2:
+  case 3: {  // arc
+      feedrate(parsenumber('F',fr));
+      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          (cmd==2) ? -1 : 1);
+      break;
+    }
   case  4:  pause(parsenumber('S',0) + parsenumber('P',0)*1000.0f);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
