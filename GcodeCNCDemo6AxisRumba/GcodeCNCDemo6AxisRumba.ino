@@ -16,8 +16,7 @@
 #define BAUD                 (57600)  // How fast is the Arduino talking?
 #define MAX_BUF              (64)  // What is the longest message Arduino can store?
 #define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY       (50)
-#define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
+#define MAX_FEEDRATE         (1000000.0)
 #define MIN_FEEDRATE         (0.01)
 #define NUM_AXIES            (6)
 
@@ -91,7 +90,7 @@ void feedrate(float nfr) {
     Serial.println(F("steps/s."));
     return;
   }
-  step_delay = 1000000.0/nfr;
+  step_delay = MAX_FEEDRATE/nfr;
   fr=nfr;
 }
 
@@ -151,19 +150,47 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
     digitalWrite(motors[i].dir_pin,a[i].delta>0?HIGH:LOW);
   }
   
+  long dt = MAX_FEEDRATE / 5000;
+  long accel = 1;
+  long steps_to_accel = dt - step_delay;
+  if(steps_to_accel > maxsteps/2 ) 
+    steps_to_accel = maxsteps/2;
+    
+  long steps_to_decel = maxsteps - steps_to_accel;
+
+  Serial.print("START ");
+  Serial.println(dt);
+  Serial.print("TOP ");
+  Serial.println(step_delay);
+  
+  Serial.print("accel until ");
+  Serial.println(steps_to_accel);  
+  Serial.print("decel after ");
+  Serial.println(steps_to_decel);  
+  Serial.print("total ");
+  Serial.println(maxsteps);  
 #ifdef VERBOSE
   Serial.println(F("Start >"));
 #endif
-  
+
   for( i=0; i<maxsteps; ++i ) {
     for(j=0;j<NUM_AXIES;++j) {
       a[j].over += a[j].absdelta;
       if(a[j].over >= maxsteps) {
         a[j].over -= maxsteps;
-        onestep(j);
+        
+        digitalWrite(motors[j].step_pin,HIGH);
+        digitalWrite(motors[j].step_pin,LOW);
       }
     }
-    pause(step_delay);
+
+    if(i<steps_to_accel) {
+      dt -= accel;
+    }
+    if(i>=steps_to_decel) {
+      dt += accel;
+    }
+    delayMicroseconds(dt);
   }
 
 #ifdef VERBOSE
@@ -367,19 +394,17 @@ void setup() {
  */
 void loop() {
   // listen for serial commands
-  while(Serial.available() > 0) {  // if something is available
+  if(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
     if(sofar<MAX_BUF) buffer[sofar++]=c;  // store it
-    if(buffer[sofar-1]==';') break;  // entire message received
-  }
-
-  if(sofar>0 && buffer[sofar-1]==';') {
-    // we got a message and it ends with a semicolon
-    buffer[sofar]=0;  // end the buffer so string functions work right
-    Serial.print(F("\r\n"));  // echo a return character for humans
-    processCommand();  // do something with the command
-    ready();
+    if(buffer[sofar-1]=='\n') {  // entire message received
+      // we got a message and it ends with a semicolon
+      buffer[sofar]=0;  // end the buffer so string functions work right
+      Serial.print(F("\r\n"));  // echo a return character for humans
+      processCommand();  // do something with the command
+      ready();
+    }
   }
 }
 
