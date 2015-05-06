@@ -114,9 +114,6 @@ void line(float newx,float newy) {
   long i;
   long over=0;
 
-  Serial.print("delay=");  Serial.println(step_delay);
-  Serial.print("steps=");  Serial.println(dx>dy?dx:dy);
-
   if(dx>dy) {
     for(i=0;i<dx;++i) {
       m1.onestep(dirx);
