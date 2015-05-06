@@ -20,6 +20,12 @@
 #define MIN_FEEDRATE         (0.01)
 #define NUM_AXIES            (4)
 
+// for arc directions
+#define ARC_CW          (1)
+#define ARC_CCW         (-1)
+// Arcs are split into many line segments.  How long are the segments?
+#define MM_PER_SEGMENT  (10)
+
 
 //------------------------------------------------------------------------------
 // INCLUDES
@@ -69,6 +75,7 @@ long step_delay;  // machine version
 // settings
 char mode_abs=1;  // absolute mode?
 
+long line_number=0;
 
 //------------------------------------------------------------------------------
 // METHODS
@@ -185,6 +192,61 @@ void line(float newx,float newy,float newz,float newe) {
 }
 
 
+// returns angle of dy/dx as a value from 0...2PI
+static float atan3(float dy,float dx) {
+  float a=atan2(dy,dx);
+  if(a<0) a=(PI*2.0)+a;
+  return a;
+}
+
+
+// This method assumes the limits have already been checked.
+// This method assumes the start and end radius match.
+// This method assumes arcs are not >180 degrees (PI radians)
+// cx/cy - center of circle
+// x/y - end position
+// dir - ARC_CW or ARC_CCW to control direction of arc
+static void arc(float cx,float cy,float x,float y,float dir) {
+  // get radius
+  float dx = px - cx;
+  float dy = py - cy;
+  float radius=sqrt(dx*dx+dy*dy);
+
+  // find angle of arc (sweep)
+  float angle1=atan3(dy,dx);
+  float angle2=atan3(y-cy,x-cx);
+  float theta=angle2-angle1;
+  
+  if(dir>0 && theta<0) angle2+=2*PI;
+  else if(dir<0 && theta>0) angle1+=2*PI;
+  
+  theta=angle2-angle1;
+  
+  // get length of arc
+  // float circ=PI*2.0*radius;
+  // float len=theta*circ/(PI*2.0);
+  // simplifies to
+  float len = abs(theta) * radius;
+
+  int i, segments = ceil( len * MM_PER_SEGMENT );
+ 
+  float nx, ny, angle3, scale;
+
+  for(i=0;i<segments;++i) {
+    // interpolate around the arc
+    scale = ((float)i)/((float)segments);
+    
+    angle3 = ( theta * scale ) + angle1;
+    nx = cx + cos(angle3) * radius;
+    ny = cy + sin(angle3) * radius;
+    // send it to the planner
+    line(nx,ny,pz,pe);
+  }
+  
+  line(x,y,pz,pe);
+}
+
+
 /**
  * Look for character /code/ in the buffer and read the float that immediately follows it.
  * @return the value found.  If nothing is found, /val/ is returned.
@@ -234,7 +296,10 @@ void help() {
   Serial.print(F("GcodeCNCDemo4AxisV2 "));
   Serial.println(VERSION);
   Serial.println(F("Commands:"));
-  Serial.println(F("G00/G01 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)] [F(feedrate)]; - linear move"));
+  Serial.println(F("G00 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)] [F(feedrate)]; - line"));
+  Serial.println(F("G01 [X(steps)] [Y(steps)] [Z(steps)] [E(steps)] [F(feedrate)]; - line"));
+  Serial.println(F("G02 [X(steps)] [Y(steps)] [I(steps)] [J(steps)] [F(feedrate)]; - clockwise arc"));
+  Serial.println(F("G03 [X(steps)] [Y(steps)] [I(steps)] [J(steps)] [F(feedrate)]; - counter-clockwise arc"));
   Serial.println(F("G04 P[seconds]; - delay"));
   Serial.println(F("G90; - absolute mode"));
   Serial.println(F("G91; - relative mode"));
@@ -242,6 +307,7 @@ void help() {
   Serial.println(F("M18; - disable motors"));
   Serial.println(F("M100; - this help message"));
   Serial.println(F("M114; - report position and feedrate"));
+  Serial.println(F("All commands must end with a newline."));
 }
 
 
@@ -249,16 +315,64 @@ void help() {
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  // blank lines
+  if(buffer[0]==';') return;
+  
+  long cmd;
+  
+  // is there a line number?
+  cmd=parsenumber('N',-1);
+  if(cmd!=-1 && buffer[0]=='N') {  // line number must appear first on the line
+    if( cmd != line_number ) {
+      // wrong line number error
+      Serial.print(F("BADLINENUM "));
+      Serial.println(line_number);
+      return;
+    }
+  
+    // is there a checksum?
+    if(strchr(buffer,'*')!=0) {
+      // yes.  is it valid?
+      char checksum=0;
+      int c=0;
+      while(buffer[c]!='*') checksum ^= buffer[c++];
+      c++; // skip *
+      int against = strtod(buffer+c,NULL);
+      if( checksum != against ) {
+        Serial.print(F("BADCHECKSUM "));
+        Serial.println(line_number);
+        return;
+      } 
+    } else {
+      Serial.print(F("NOCHECKSUM "));
+      Serial.println(line_number);
+      return;
+    }
+    
+    line_number++;
+  }
+
+  cmd = parsenumber('G',-1);
   switch(cmd) {
-  case  0: // move linear
-  case  1: // move linear
+  case  0: 
+  case  1: { // line
     feedrate(parsenumber('F',fr));
     line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
           parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
           parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
+    }
+  case 2:
+  case 3: {  // arc
+      feedrate(parsenumber('F',fr));
+      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          (cmd==2) ? -1 : 1);
+      break;
+    }
   case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
@@ -321,16 +435,15 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF) buffer[sofar++]=c;  // store it
-    if(buffer[sofar-1]==';') break;  // entire message received
-  }
-
-  if(sofar>0 && buffer[sofar-1]==';') {
-    // we got a message and it ends with a semicolon
-    buffer[sofar]=0;  // end the buffer so string functions work right
-    Serial.print(F("\r\n"));  // echo a return character for humans
-    processCommand();  // do something with the command
-    ready();
+    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(c=='\n') {
+      // entire message received
+      // we got a message and it ends with a semicolon
+      buffer[sofar]=0;  // end the buffer so string functions work right
+      Serial.print(F("\r\n"));  // echo a return character for humans
+      processCommand();  // do something with the command
+      ready();
+    }
   }
 }
 

@@ -114,6 +114,9 @@ void line(float newx,float newy) {
   long i;
   long over=0;
 
+  Serial.print("delay=");  Serial.println(step_delay);
+  Serial.print("steps=");  Serial.println(dx>dy?dx:dy);
+
   if(dx>dy) {
     for(i=0;i<dx;++i) {
       m1.onestep(dirx);
@@ -254,6 +257,7 @@ void help() {
   Serial.println(F("M18; - disable motors"));
   Serial.println(F("M100; - this help message"));
   Serial.println(F("M114; - report position and feedrate"));
+  Serial.println(F("All commands must end with a newline."));
 }
 
 
@@ -332,16 +336,15 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF) buffer[sofar++]=c;  // store it
-    if(buffer[sofar-1]==';') break;  // entire message received
-  }
-
-  if(sofar>0 && buffer[sofar-1]==';') {
-    // we got a message and it ends with a semicolon
-    buffer[sofar]=0;  // end the buffer so string functions work right
-    Serial.print(F("\r\n"));  // echo a return character for humans
-    processCommand();  // do something with the command
-    ready();
+    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(c=='\n') {
+      // entire message received
+      // we got a message and it ends with a semicolon
+      buffer[sofar]=0;  // end the buffer so string functions work right
+      Serial.print(F("\r\n"));  // echo a return character for humans
+      processCommand();  // do something with the command
+      ready();
+    }
   }
 }
 

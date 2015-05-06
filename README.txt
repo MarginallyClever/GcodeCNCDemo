@@ -1,12 +1,14 @@
 #GcodeCNCDemo
 
-This is a simple demonstration of a 2-axis CNC machine using an Arduino UNO and the Adafruit Motor Shield v1 and v2.
+This is a simple demonstration CNC machines using an Arduino.
 
 ##Which files should I use?
 
-If you have an Adafruit Motor Shield v1 then use GcodeCNCDemo2AxisV1.
-If you have an Adafruit Motor Shield v2 then use GcodeCNCDemo2AxisV2, GcodeCNCDemo4AxisV2, or GcodeCNCDemo6AxisV2.
-If you have a RUMBA controller then use GcodeCNCDemo6AxisRumba.
+GcodeCNCDemo2AxisV1 uses an UNO R3 and the Adafruit Motor Shield v1.
+GcodeCNCDemo*AxisV2 uses an UNO R3 and the Adafruit Motor Shield v2.
+GcodeCNCDemo6AxisRumba* uses an RUMBA board.
+
+GcodeCNCDemo6AxisRumba abuses the timer interrupt on the RUMBA to eliminate the 'hiccough' between commands.  It can also 'look ahead' and plan more efficient movement.
 
 ##Sending whole files
 
