@@ -1,7 +1,7 @@
 GcodeCNCDemo
----
 
-This is a simple demonstration CNC machines using an Arduino.
+These programs will teach an Arduino to listen to Gcode and move stepper motors.
+It is an easy way to program your Arduino CNC machine.
 
 For installation instructions, see
 http://learn.marginallyclever.com/index.php/GcodeCNCDemo#Installation
@@ -9,9 +9,8 @@ http://learn.marginallyclever.com/index.php/GcodeCNCDemo#Installation
 For documentation, see
 http://learn.marginallyclever.com/index.php/GcodeCNCDemo
 
-##Author
+Please visit the author's website - http://marginallyclever.com
 
-http://marginallyclever.com
 Dan Royer
 2013-08-30
 
