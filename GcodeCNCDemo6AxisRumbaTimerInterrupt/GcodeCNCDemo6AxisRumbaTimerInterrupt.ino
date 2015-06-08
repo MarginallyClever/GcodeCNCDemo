@@ -35,6 +35,40 @@
 #define MM_PER_SEGMENT  (10)
 
 
+
+// RUMBA pins
+#define MOTOR_0_STEP_PIN              (17)
+#define MOTOR_0_DIR_PIN               (16)
+#define MOTOR_0_ENABLE_PIN            (48)
+#define MOTOR_0_LIMIT_SWITCH_PIN      (37)
+
+#define MOTOR_1_STEP_PIN              (54)
+#define MOTOR_1_DIR_PIN               (47)
+#define MOTOR_1_ENABLE_PIN            (55)
+#define MOTOR_1_LIMIT_SWITCH_PIN      (36)
+
+#define MOTOR_2_STEP_PIN              (57)
+#define MOTOR_2_DIR_PIN               (56)
+#define MOTOR_2_ENABLE_PIN            (62)
+#define MOTOR_2_LIMIT_SWITCH_PIN      (35)
+
+#define MOTOR_3_STEP_PIN              (23)
+#define MOTOR_3_DIR_PIN               (22)
+#define MOTOR_3_ENABLE_PIN            (27)
+#define MOTOR_3_LIMIT_SWITCH_PIN      (34)
+
+#define MOTOR_4_STEP_PIN              (26)
+#define MOTOR_4_DIR_PIN               (25)
+#define MOTOR_4_ENABLE_PIN            (24)
+#define MOTOR_4_LIMIT_SWITCH_PIN      (33)
+
+#define MOTOR_5_STEP_PIN              (29)
+#define MOTOR_5_DIR_PIN               (28)
+#define MOTOR_5_ENABLE_PIN            (39)
+#define MOTOR_5_LIMIT_SWITCH_PIN      (32)
+  
+  
+
 //------------------------------------------------------------------------------
 // STRUCTS
 //------------------------------------------------------------------------------
@@ -74,6 +108,7 @@ Motor motors[NUM_AXIES];
 Segment line_segments[MAX_SEGMENTS];
 volatile int current_segment;
 volatile int last_segment;
+unsigned int step_loops;
 
 char buffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
@@ -164,6 +199,16 @@ void timer_set_frequency(long desired_freq_hz) {
   // Different clock sources can be selected for each timer independently. 
   // To calculate the timer frequency (for example 2Hz using timer1) you will need:
   
+  if(desired_freq_hz>20000) {
+    step_loops=4;
+    desired_freq_hz>>=2;
+  } else if(desired_freq_hz>10000) {
+    step_loops=2;
+    desired_freq_hz>>=1;
+  } else {
+    step_loops=1;
+  }
+ 
   //  CPU frequency 16Mhz for Arduino
   //  maximum timer counter value (256 for 8bit, 65536 for 16bit timer)
   int prescaler_index=-1;
@@ -257,18 +302,22 @@ ISR(TIMER1_COMPA_vect) {
     timer_set_frequency(seg.feed_rate);
   }
 
-  // make a step
-  --seg.steps_left;
-
-  // move each axis
-  for(j=0;j<NUM_AXIES;++j) {
-    Axis &a = seg.a[j];
-    
-    a.over += a.absdelta;
-    if(a.over >= seg.steps) {
-      digitalWrite(motors[j].step_pin,LOW);
-      a.over -= seg.steps;
-      digitalWrite(motors[j].step_pin,HIGH);
+  for(int s=0;s<step_loops;++s) {
+    // make a step
+    --seg.steps_left;
+  
+    // move each axis
+    // TODO unroll this loop and dereference earlier to make this faster
+    // will raise the top speed of the machine.
+    for(j=0;j<NUM_AXIES;++j) {
+      Axis &a = seg.a[j];
+      
+      a.over += a.absdelta;
+      if(a.over >= seg.steps) {
+        digitalWrite(motors[j].step_pin,LOW);
+        a.over -= seg.steps;
+        digitalWrite(motors[j].step_pin,HIGH);
+      }
     }
   }
 }
@@ -519,35 +568,35 @@ void ready() {
  * set up the pins for each motor
  */
 void motor_setup() {
-  motors[0].step_pin=17;
-  motors[0].dir_pin=16;
-  motors[0].enable_pin=48;
-  motors[0].limit_switch_pin=37;
+  motors[0].step_pin = MOTORS_0_STEP_PIN;
+  motors[0].dir_pin = MOTORS_0_DIR_PIN;
+  motors[0].enable_pin = MOTORS_0_ENABLE_PIN;
+  motors[0].limit_switch_pin = MOTORS_0_LIMIT_SWITCH_PIN;
 
-  motors[1].step_pin=54;
-  motors[1].dir_pin=47;
-  motors[1].enable_pin=55;
-  motors[1].limit_switch_pin=36;
+  motors[1].step_pin = MOTORS_1_STEP_PIN;
+  motors[1].dir_pin = MOTORS_1_DIR_PIN;
+  motors[1].enable_pin = MOTORS_1_ENABLE_PIN;
+  motors[1].limit_switch_pin = MOTORS_1_LIMIT_SWITCH_PIN;
 
-  motors[2].step_pin=57;
-  motors[2].dir_pin=56;
-  motors[2].enable_pin=62;
-  motors[2].limit_switch_pin=35;
+  motors[2].step_pin = MOTORS_2_STEP_PIN;
+  motors[2].dir_pin = MOTORS_2_DIR_PIN;
+  motors[2].enable_pin = MOTORS_2_ENABLE_PIN;
+  motors[2].limit_switch_pin = MOTORS_2_LIMIT_SWITCH_PIN;
 
-  motors[3].step_pin=23;
-  motors[3].dir_pin=22;
-  motors[3].enable_pin=27;
-  motors[3].limit_switch_pin=34;
+  motors[3].step_pin = MOTORS_3_STEP_PIN;
+  motors[3].dir_pin = MOTORS_3_DIR_PIN;
+  motors[3].enable_pin = MOTORS_3_ENABLE_PIN;
+  motors[3].limit_switch_pin = MOTORS_3_LIMIT_SWITCH_PIN;
 
-  motors[4].step_pin=26;
-  motors[4].dir_pin=25;
-  motors[4].enable_pin=24;
-  motors[4].limit_switch_pin=33;
+  motors[4].step_pin = MOTORS_4_STEP_PIN;
+  motors[4].dir_pin = MOTORS_4_DIR_PIN;
+  motors[4].enable_pin = MOTORS_4_ENABLE_PIN;
+  motors[4].limit_switch_pin = MOTORS_4_LIMIT_SWITCH_PIN;
 
-  motors[5].step_pin=29;
-  motors[5].dir_pin=28;
-  motors[5].enable_pin=39;
-  motors[5].limit_switch_pin=32;
+  motors[5].step_pin = MOTORS_5_STEP_PIN;
+  motors[5].dir_pin = MOTORS_5_DIR_PIN;
+  motors[5].enable_pin = MOTORS_5_ENABLE_PIN;
+  motors[5].limit_switch_pin = MOTORS_5_LIMIT_SWITCH_PIN;
   
   int i;
   for(i=0;i<NUM_AXIES;++i) {  
