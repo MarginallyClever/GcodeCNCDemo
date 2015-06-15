@@ -9,13 +9,13 @@
 
   Step C0 C1 C2 C3
      1  1  0  1  0	\
-	 2	1  1  1  0	|
+     2	1  1  1  0	|
      3  0  1  1  0	/
-	 4	0  1  1  1	-
+     4	0  1  1  1	-
      5  0  1  0  1	\
-	 6	1  1  0  1	|
+     6	1  1  0  1	|
      7  1  0  0  1	/
-	 8	1  0  1  1	-
+     8	1  0  1  1	-
 
 */
 
@@ -90,7 +90,7 @@ void HG7881Step::onestep(int dir)
 
 	/* Energize the coil by sequence */
 
-	digitalWrite(pinA_IA, coil_seq[thisStep][0]);
+    digitalWrite(pinA_IA, coil_seq[thisStep][0]);
     digitalWrite(pinA_IB, coil_seq[thisStep][1]);
     digitalWrite(pinB_IA, coil_seq[thisStep][2]);
     digitalWrite(pinB_IB, coil_seq[thisStep][3]);
