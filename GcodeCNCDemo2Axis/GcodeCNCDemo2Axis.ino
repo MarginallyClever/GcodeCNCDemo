@@ -12,7 +12,7 @@
 // GLOBALS
 //------------------------------------------------------------------------------
 
-char buffer[MAX_BUF];  // where we store the message until we get a ';'
+char buffer[MAX_BUF];  // where we store the message until we get a newline
 int sofar;  // how much is in the buffer
 
 float px, py;  // location
@@ -98,6 +98,7 @@ void line(float newx,float newy) {
       }
       pause(step_delay);
     }
+    disable();  // not drive the motor unnecessarily after step
   } else {
     for(i=0;i<dy;++i) {
       m2step(diry);
@@ -108,6 +109,7 @@ void line(float newx,float newy) {
       }
       pause(step_delay);
     }
+    disable();  // not drive the motor unnecessarily after step
   }
 
   px=newx;
@@ -310,9 +312,9 @@ void loop() {
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
     if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
-    if(c=='\n') {
+    if ((c == '\n') || (c == '\r')) {
       // entire message received
-      // we got a message and it ends with a semicolon
+      // we got a message and it ends with a newline
       buffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
