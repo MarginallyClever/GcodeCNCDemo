@@ -47,4 +47,3 @@ class HG7881Step {
 };
 
 #endif
-
