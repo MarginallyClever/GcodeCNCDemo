@@ -98,7 +98,6 @@ void line(float newx,float newy) {
       }
       pause(step_delay);
     }
-    disable();  // not drive the motor unnecessarily after step
   } else {
     for(i=0;i<dy;++i) {
       m2step(diry);
@@ -109,7 +108,6 @@ void line(float newx,float newy) {
       }
       pause(step_delay);
     }
-    disable();  // not drive the motor unnecessarily after step
   }
 
   px=newx;
