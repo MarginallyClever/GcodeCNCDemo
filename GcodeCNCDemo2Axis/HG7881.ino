@@ -5,6 +5,8 @@
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
 
+// * to reduce and avoid overheat on HG7881, use M18 after every G00, G01, G02, G03 * \\
+
 #if CONTROLLER == HG7881
 
 //------------------------------------------------------------------------------
