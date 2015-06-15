@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 #define AMS1 (1)
 #define AMS2 (2)
+#define HG7881 (3) // HG7881 Stepper Driver
 
 // change this line to select a different control board for your CNC.
 #define CONTROLLER AMS1
