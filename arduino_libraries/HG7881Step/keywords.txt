@@ -9,7 +9,7 @@
 HG7881		KEYWORD1
 
 #######################################
-# Methods and Functions	(KEYWORD2)
+# Methods and Functions (KEYWORD2)
 #######################################
 
 onestep	KEYWORD2
@@ -19,5 +19,5 @@ release	KEYWORD2
 # Constants	(LITERAL1)
 #######################################
 
-MICROSTEPS	LITERAL1
-FORWARD		LITERAL1
+MICROSTEPS  LITERAL1
+FORWARD     LITERAL1
