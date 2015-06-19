@@ -8,13 +8,13 @@
   The sequence of control signals for 4 control wires is as follows:
 
   Step C0 C1 C2 C3
-     1  1  0  1  0	\
+     1	1  0  1  0	\
      2	1  1  1  0	|
-     3  0  1  1  0	/
+     3	0  1  1  0	/
      4	0  1  1  1	-
-     5  0  1  0  1	\
+     5	0  1  0  1	\
      6	1  1  0  1	|
-     7  1  0  0  1	/
+     7	1  0  0  1	/
      8	1  0  1  1	-
 
 */
@@ -35,8 +35,8 @@ class HG7881Step {
     // mover method:
     void onestep(int dir);
 
-	// release all coils
-	void release();
+    // release all coils
+    void release();
 
   private:    
     // motor pin numbers:
