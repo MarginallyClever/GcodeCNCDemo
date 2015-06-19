@@ -1,5 +1,3 @@
-#ifndef CONFIG_H
-#define CONFIG_H
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
 // dan@marginallycelver.com 2013-08-30
@@ -7,43 +5,47 @@
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
 
+// * to reduce and avoid overheat on HG7881, use M18 after every G00, G01, G02, G03 * \\
+
+#if CONTROLLER == HG7881
 
 //------------------------------------------------------------------------------
-// CONSTANTS
+// INCLUDES
 //------------------------------------------------------------------------------
-#define AMS1 (1)
-#define AMS2 (2)
-#define HG7881 (3) // HG7881 Stepper Driver
-
-// change this line to select a different control board for your CNC.
-#define CONTROLLER AMS1
+#include <HG7881Step.h>
 
 
-#define VERSION        (1)  // firmware version
-#define BAUD           (57600)  // How fast is the Arduino talking?
-#define MAX_BUF        (64)  // What is the longest message Arduino can store?
-#define STEPS_PER_TURN (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY (50.0)
-#define MAX_FEEDRATE   (1000000.0/MIN_STEP_DELAY)
-#define MIN_FEEDRATE   (0.01)
-
-
-// for arc directions
-#define ARC_CW          (1)
-#define ARC_CCW         (-1)
-// Arcs are split into many line segments.  How long are the segments?
-#define MM_PER_SEGMENT  (10)
+//------------------------------------------------------------------------------
+// GLOBALS
+//------------------------------------------------------------------------------
+// Initialize Adafruit stepper controller
+// HG7881Step motor(Step, pinA_IA, pinA_IB, pinB_IA, pin_B_IB);
+HG7881Step m1((int)STEPS_PER_TURN, 9, 5, 10, 6);
+HG7881Step m2((int)STEPS_PER_TURN, 0, 6, 5, 7);
 
 
 //------------------------------------------------------------------------------
 // METHODS
 //------------------------------------------------------------------------------
-extern void m1step(int dir);
-extern void m2step(int dir);
-extern void disable();
-extern void setup_controller();
+
+void m1step(int dir) {
+  m1.onestep(dir);
+}
+
+void m2step(int dir) {
+  m2.onestep(dir);
+}
+
+void disable() {
+    m1.release();
+    m2.release();
+}
 
 
+void setup_controller() {}
+
+
+#endif  // CONTROLLER == HG7881
 /**
 * This file is part of GcodeCNCDemo.
 *
@@ -60,4 +62,4 @@ extern void setup_controller();
 * You should have received a copy of the GNU General Public License
 * along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 */
-#endif
+
