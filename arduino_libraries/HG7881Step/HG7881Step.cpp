@@ -8,13 +8,13 @@
   The sequence of control signals for 4 control wires is as follows:
 
   Step C0 C1 C2 C3
-     1  1  0  1  0	\
+     1	1  0  1  0	\
      2	1  1  1  0	|
-     3  0  1  1  0	/
+     3	0  1  1  0	/
      4	0  1  1  1	-
-     5  0  1  0  1	\
+     5	0  1  0  1	\
      6	1  1  0  1	|
-     7  1  0  0  1	/
+     7	1  0  0  1	/
      8	1  0  1  1	-
 
 */
@@ -40,19 +40,19 @@ int currentstep;
 
 HG7881Step::HG7881Step(int number_of_steps, int motor_pin_1, int motor_pin_2, int motor_pin_3, int motor_pin_4)
 {
-  currentstep = 0;
+    currentstep = 0;
   
-  // Arduino pins for the motor control connection:
-  this->pinA_IA = motor_pin_1;
-  this->pinA_IB = motor_pin_2;
-  this->pinB_IA = motor_pin_3;
-  this->pinB_IB = motor_pin_4;
+    // Arduino pins for the motor control connection:
+    this->pinA_IA = motor_pin_1;
+    this->pinA_IB = motor_pin_2;
+    this->pinB_IA = motor_pin_3;
+    this->pinB_IB = motor_pin_4;
 
-  // setup the pins on the microcontroller:
-  pinMode(this->pinA_IA, OUTPUT);
-  pinMode(this->pinA_IB, OUTPUT);
-  pinMode(this->pinB_IA, OUTPUT);
-  pinMode(this->pinB_IB, OUTPUT);
+    // setup the pins on the microcontroller:
+    pinMode(this->pinA_IA, OUTPUT);
+    pinMode(this->pinA_IB, OUTPUT);
+    pinMode(this->pinB_IA, OUTPUT);
+    pinMode(this->pinB_IB, OUTPUT);
   
 }
 
@@ -62,10 +62,10 @@ HG7881Step::HG7881Step(int number_of_steps, int motor_pin_1, int motor_pin_2, in
  * to avoid produce more heat on IC's
  */
  void HG7881Step::release(){
-	 digitalWrite(this->pinA_IA, LOW);
-	 digitalWrite(this->pinA_IB, LOW);
-	 digitalWrite(this->pinB_IA, LOW);
-	 digitalWrite(this->pinB_IB, LOW);
+    digitalWrite(this->pinA_IA, LOW);
+    digitalWrite(this->pinA_IB, LOW);
+    digitalWrite(this->pinB_IA, LOW);
+    digitalWrite(this->pinB_IB, LOW);
  }
 
 /*
@@ -75,21 +75,20 @@ HG7881Step::HG7881Step(int number_of_steps, int motor_pin_1, int motor_pin_2, in
  */
 void HG7881Step::onestep(int dir)
 {
-	if((currentstep/(MICROSTEPS/2)) % 2) { // we're at an odd step, weird
-		if(dir == FORWARD) currentstep += MICROSTEPS/2;
-		else               currentstep -= MICROSTEPS/2;
-	} else {           // go to the next even step
-		if(dir == FORWARD) currentstep += MICROSTEPS;
-		else               currentstep -= MICROSTEPS;
-	}
+    if((currentstep/(MICROSTEPS/2)) % 2) { // we're at an odd step, weird
+	if(dir == FORWARD) currentstep += MICROSTEPS/2;
+	else               currentstep -= MICROSTEPS/2;
+    } else {           // go to the next even step
+	if(dir == FORWARD) currentstep += MICROSTEPS;
+	else               currentstep -= MICROSTEPS;
+    }
 
-	currentstep += MICROSTEPS*4;
-	currentstep %= MICROSTEPS*4;
+    currentstep += MICROSTEPS*4;
+    currentstep %= MICROSTEPS*4;
 
-	thisStep = currentstep/(MICROSTEPS/2);
+    thisStep = currentstep/(MICROSTEPS/2);
 
-	/* Energize the coil by sequence */
-
+    /* Energize the coil by sequence */
     digitalWrite(pinA_IA, coil_seq[thisStep][0]);
     digitalWrite(pinA_IB, coil_seq[thisStep][1]);
     digitalWrite(pinB_IA, coil_seq[thisStep][2]);
