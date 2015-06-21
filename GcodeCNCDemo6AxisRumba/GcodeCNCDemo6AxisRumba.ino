@@ -323,6 +323,7 @@ void ready() {
 
 /**
  * set up the pins for each motor
+ * Pins fits a Ramps 1.4 board
  */
 void motor_setup() {
   motors[0].step_pin=54;
