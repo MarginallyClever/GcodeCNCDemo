@@ -1,7 +1,8 @@
 //------------------------------------------------------------------------------
-// 6 Axis CNC Demo Rumba - supports raprapdiscount RUMBA controller
-// dan@marginallycelver.com 2013-10-28
-// RUMBA should be treated like a MEGA 2560 Arduino.
+// 4 Axis CNC Hot Wire Foam Cutter  - supports MEGA 2560 Arduino RAMPS 1.4
+// dan@marginallyclever.com 2013-10-28
+// Modified by Søren Vedel
+// sorenvedel@gmail.com 2015-06-19
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -16,15 +17,10 @@
 #define BAUD                 (57600)  // How fast is the Arduino talking?
 #define MAX_BUF              (64)  // What is the longest message Arduino can store?
 #define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
-#define MAX_FEEDRATE         (1000000.0)
-#define MIN_FEEDRATE         (0.01)
-#define NUM_AXIES            (6)
-
-// for arc directions
-#define ARC_CW          (1)
-#define ARC_CCW         (-1)
-// Arcs are split into many line segments.  How long are the segments?
-#define MM_PER_SEGMENT  (10)
+#define STEPS_PER_MM         (STEPS_PER_TURN*16/1.25)  // (400*16)/1.25 with a M8 spindle
+#define MAX_FEEDRATE         (1000000)
+#define MIN_FEEDRATE         (1)
+#define NUM_AXIES            (4)
 
 
 //------------------------------------------------------------------------------
@@ -60,7 +56,7 @@ int sofar;  // how much is in the buffer
 float fr=0;  // human version
 long step_delay;  // machine version
 
-float px,py,pz,pu,pv,pw;  // position
+float px,py,pz,pe;  // position
 
 // settings
 char mode_abs=1;  // absolute mode?
@@ -108,14 +104,12 @@ void feedrate(float nfr) {
  * @input npx new position x
  * @input npy new position y
  */
-void position(float npx,float npy,float npz,float npu,float npv,float npw) {
+void position(float npx,float npy,float npz,float npe) {
   // here is a good place to add sanity tests
   px=npx;
   py=npy;
   pz=npz;
-  pu=npu;
-  pv=npv;
-  pw=npw;
+  pe=npe;
 }
 
 
@@ -126,8 +120,8 @@ void position(float npx,float npy,float npz,float npu,float npv,float npw) {
  **/
 void onestep(int motor) {
 #ifdef VERBOSE
-  char *letter="XYZUVW";
-  Serial.print(letter[motor]);
+  char *letter="XYZE";
+  Serial.print(letter[]);
 #endif
   
   digitalWrite(motors[motor].step_pin,HIGH);
@@ -140,13 +134,11 @@ void onestep(int motor) {
  * @input newx the destination x position
  * @input newy the destination y position
  **/
-void line(float newx,float newy,float newz,float newu,float newv,float neww) {
-  a[0].delta = newx-px;
-  a[1].delta = newy-py;
-  a[2].delta = newz-pz;
-  a[3].delta = newu-pu;
-  a[4].delta = newv-pv;
-  a[5].delta = neww-pw;
+void line(float newx,float newy,float newz,float newe) {
+  a[0].delta = (newx-px)*STEPS_PER_MM;
+  a[1].delta = (newy-py)*STEPS_PER_MM;
+  a[2].delta = (newz-pz)*STEPS_PER_MM;
+  a[3].delta = (newe-pe)*STEPS_PER_MM;
   
   long i,j,maxsteps=0;
 
@@ -158,7 +150,7 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
     digitalWrite(motors[i].dir_pin,a[i].delta>0?HIGH:LOW);
   }
   
-  long dt = MAX_FEEDRATE / 5000;
+  long dt = MAX_FEEDRATE/5000;
   long accel = 1;
   long steps_to_accel = dt - step_delay;
   if(steps_to_accel > maxsteps/2 ) 
@@ -205,7 +197,9 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
   Serial.println(F("< Done."));
 #endif
 
-  position(newx,newy,newz,newu,newv,neww);
+  position(newx,newy,newz,newe);
+
+  where();
 }
 
 
@@ -216,52 +210,6 @@ static float atan3(float dy,float dx) {
   return a;
 }
 
-
-// This method assumes the limits have already been checked.
-// This method assumes the start and end radius match.
-// This method assumes arcs are not >180 degrees (PI radians)
-// cx/cy - center of circle
-// x/y - end position
-// dir - ARC_CW or ARC_CCW to control direction of arc
-static void arc(float cx,float cy,float x,float y,float dir) {
-  // get radius
-  float dx = px - cx;
-  float dy = py - cy;
-  float radius=sqrt(dx*dx+dy*dy);
-
-  // find angle of arc (sweep)
-  float angle1=atan3(dy,dx);
-  float angle2=atan3(y-cy,x-cx);
-  float theta=angle2-angle1;
-  
-  if(dir>0 && theta<0) angle2+=2*PI;
-  else if(dir<0 && theta>0) angle1+=2*PI;
-  
-  theta=angle2-angle1;
-  
-  // get length of arc
-  // float circ=PI*2.0*radius;
-  // float len=theta*circ/(PI*2.0);
-  // simplifies to
-  float len = abs(theta) * radius;
-
-  int i, segments = ceil( len * MM_PER_SEGMENT );
- 
-  float nx, ny, angle3, scale;
-
-  for(i=0;i<segments;++i) {
-    // interpolate around the arc
-    scale = ((float)i)/((float)segments);
-    
-    angle3 = ( theta * scale ) + angle1;
-    nx = cx + cos(angle3) * radius;
-    ny = cy + sin(angle3) * radius;
-    // send it to the planner
-    line(nx,ny,pz,pu,pv,pw);
-  }
-  
-  line(x,y,pz,pu,pv,pw);
-}
 
 
 /**
@@ -300,9 +248,7 @@ void where() {
   output("X",px);
   output("Y",py);
   output("Z",pz);
-  output("U",pu);
-  output("V",pv);
-  output("W",pw);
+  output("E",pe);
   output("F",fr);
   Serial.println(mode_abs?"ABS":"REL");
 } 
@@ -315,13 +261,11 @@ void help() {
   Serial.print(F("GcodeCNCDemo6AxisV2 "));
   Serial.println(VERSION);
   Serial.println(F("Commands:"));
-  Serial.println(F("G00/G01 [X/Y/Z/U/V/W(steps)] [F(feedrate)]; - linear move"));
-  Serial.println(F("G02 [X(steps)] [Y(steps)] [I(steps)] [J(steps)] [F(feedrate)]; - clockwise arc"));
-  Serial.println(F("G03 [X(steps)] [Y(steps)] [I(steps)] [J(steps)] [F(feedrate)]; - counter-clockwise arc"));
+  Serial.println(F("G00/G01 [X/Y/Z/E(steps)] [F(feedrate)]; - linear move"));
   Serial.println(F("G04 P[seconds]; - delay"));
   Serial.println(F("G90; - absolute mode"));
   Serial.println(F("G91; - relative mode"));
-  Serial.println(F("G92 [X/Y/Z/U/V/W(steps)]; - change logical position"));
+  Serial.println(F("G92 [X/Y/Z/E(steps)]; - change logical position"));
   Serial.println(F("M18; - disable motors"));
   Serial.println(F("M100; - this help message"));
   Serial.println(F("M114; - report position and feedrate"));
@@ -341,21 +285,10 @@ void processCommand() {
     line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
           parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
-          parsenumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
-          parsenumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw) );
+          parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
     }
-  case 2:
-  case 3: {  // arc
-      feedrate(parsenumber('F',fr));
-      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-          (cmd==2) ? -1 : 1);
-      break;
-    }
+  case  2:
   case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
@@ -363,17 +296,15 @@ void processCommand() {
     position( parsenumber('X',0),
               parsenumber('Y',0),
               parsenumber('Z',0),
-              parsenumber('U',0),
-              parsenumber('V',0),
-              parsenumber('W',0) );
+              parsenumber('E',0) );
     break;
   default:  break;
   }
 
   cmd = parsenumber('M',-1);
   switch(cmd) {
-  case 17:  motor_enable();  break;
-  case 18:  motor_disable();  break;
+  case  17:  motor_enable();  break;
+  case  18:  motor_disable();  break;
   case 100:  help();  break;
   case 114:  where();  break;
   default:  break;
@@ -394,35 +325,25 @@ void ready() {
  * set up the pins for each motor
  */
 void motor_setup() {
-  motors[0].step_pin=17;
-  motors[0].dir_pin=16;
-  motors[0].enable_pin=48;
-  motors[0].limit_switch_pin=37;
+  motors[0].step_pin=54;
+  motors[0].dir_pin=55;
+  motors[0].enable_pin=38;
+  motors[0].limit_switch_pin=3;
 
-  motors[1].step_pin=54;
-  motors[1].dir_pin=47;
-  motors[1].enable_pin=55;
-  motors[1].limit_switch_pin=36;
+  motors[1].step_pin=60;
+  motors[1].dir_pin=61;
+  motors[1].enable_pin=56;
+  motors[1].limit_switch_pin=14;
 
-  motors[2].step_pin=57;
-  motors[2].dir_pin=56;
+  motors[2].step_pin=46;
+  motors[2].dir_pin=48;
   motors[2].enable_pin=62;
-  motors[2].limit_switch_pin=35;
+  motors[2].limit_switch_pin=18;
 
-  motors[3].step_pin=23;
-  motors[3].dir_pin=22;
-  motors[3].enable_pin=27;
+  motors[3].step_pin=26;
+  motors[3].dir_pin=28;
+  motors[3].enable_pin=24;
   motors[3].limit_switch_pin=34;
-
-  motors[4].step_pin=26;
-  motors[4].dir_pin=25;
-  motors[4].enable_pin=24;
-  motors[4].limit_switch_pin=33;
-
-  motors[5].step_pin=29;
-  motors[5].dir_pin=28;
-  motors[5].enable_pin=39;
-  motors[5].limit_switch_pin=32;
   
   int i;
   for(i=0;i<NUM_AXIES;++i) {  
@@ -459,8 +380,10 @@ void setup() {
   motor_setup();
   motor_enable();
   
+  
+  where();  // for debugging purposes
   help();  // say hello
-  position(0,0,0,0,0,0);  // set staring position
+  position(0,0,0,0);  // set starting position
   feedrate(1000);  // set default speed
   ready();
 }
