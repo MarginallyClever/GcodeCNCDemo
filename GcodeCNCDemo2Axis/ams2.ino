@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// 2 Axis CNC Demo v1 - only supports motor shield v1
+// 2 Axis CNC Demo
 // dan@marginallycelver.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
@@ -18,7 +18,16 @@
 #include "utility/Adafruit_PWMServoDriver.h"
 
 
-#define AMS2_ADDRESS (0x61)
+#if CONTROLLER = AMS2
+
+// Make sure you set the right address.  If you aren't sure,
+// use http://playground.arduino.cc/Main/I2cScanner to find it.
+//#define AFMS2_ADDRESS  (0x60)
+
+#ifndef AFMS2_ADDRESS
+#error AFMS2_ADDRESS must be defined!
+#endif
+#endif
 
 //------------------------------------------------------------------------------
 // GLOBALS

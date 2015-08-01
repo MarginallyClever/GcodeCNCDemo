@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// 2 Axis CNC Demo v1 - only supports motor shield v1
+// 2 Axis CNC Demo
 // dan@marginallycelver.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
