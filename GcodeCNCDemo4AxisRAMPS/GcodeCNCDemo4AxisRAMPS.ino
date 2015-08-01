@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// 4 Axis CNC Hot Wire Foam Cutter  - supports MEGA 2560 Arduino RAMPS 1.4
+// 4 Axis CNC Demo  - supports MEGA 2560 Arduino RAMPS 1.4
 // dan@marginallyclever.com 2013-10-28
 // Modified by Søren Vedel
 // sorenvedel@gmail.com 2015-06-19
@@ -401,7 +401,6 @@ void loop() {
     if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      // we got a message and it ends with a semicolon
       buffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
