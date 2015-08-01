@@ -438,7 +438,6 @@ void loop() {
     if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      // we got a message and it ends with a semicolon
       buffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
