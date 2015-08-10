@@ -1,11 +1,13 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
 // dan@marginallycelver.com 2013-08-30
+// modified by lsahidin@yahoo.com added HG7881 stepper controller
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
 
-// * to reduce and avoid overheat on HG7881, use M18 after every G00, G01, G02, G03 * \\
+// Warning.
+// * to reduce and avoid overheat on HG7881, use M18 after every G00, G01, G02, G03 on Gcode * \\
 
 #if CONTROLLER == HG7881
 
@@ -18,7 +20,7 @@
 //------------------------------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------------------------------
-// Initialize Adafruit stepper controller
+// Initialize HG7881 stepper controller
 // HG7881Step motor(Step, pinA_IA, pinA_IB, pinB_IA, pin_B_IB);
 HG7881Step m1((int)STEPS_PER_TURN, 9, 5, 10, 6);
 HG7881Step m2((int)STEPS_PER_TURN, 0, 6, 5, 7);
@@ -29,11 +31,11 @@ HG7881Step m2((int)STEPS_PER_TURN, 0, 6, 5, 7);
 //------------------------------------------------------------------------------
 
 void m1step(int dir) {
-  m1.onestep(dir);
+    m1.onestep(dir);
 }
 
 void m2step(int dir) {
-  m2.onestep(dir);
+    m2.onestep(dir);
 }
 
 void disable() {
