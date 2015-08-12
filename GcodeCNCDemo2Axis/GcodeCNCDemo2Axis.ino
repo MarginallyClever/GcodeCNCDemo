@@ -310,7 +310,7 @@ void loop() {
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
     if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
-    if(c=='\n') || (c == '\r')) {
+    if((c=='\n') || (c == '\r')) {
       // entire message received
       buffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
