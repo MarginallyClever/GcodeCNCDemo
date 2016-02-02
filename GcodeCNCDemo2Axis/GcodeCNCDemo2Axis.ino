@@ -116,7 +116,7 @@ void line(float newx,float newy) {
 
 
 // returns angle of dy/dx as a value from 0...2PI
-static float atan3(float dy,float dx) {
+float atan3(float dy,float dx) {
   float a=atan2(dy,dx);
   if(a<0) a=(PI*2.0)+a;
   return a;
@@ -129,7 +129,7 @@ static float atan3(float dy,float dx) {
 // cx/cy - center of circle
 // x/y - end position
 // dir - ARC_CW or ARC_CCW to control direction of arc
-static void arc(float cx,float cy,float x,float y,float dir) {
+void arc(float cx,float cy,float x,float y,float dir) {
   // get radius
   float dx = px - cx;
   float dy = py - cy;
@@ -193,7 +193,7 @@ float parsenumber(char code,float val) {
  * @input code the string.
  * @input val the float.
  */
-void output(char *code,float val) {
+void output(const char *code,float val) {
   Serial.print(code);
   Serial.println(val);
 }
