@@ -165,9 +165,11 @@ void line(float newx,float newy,float newz,float newe) {
     a[i].absdelta = abs(a[i].delta);
     a[i].dir = a[i].delta > 0 ? 1:-1;
     if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
-    a[i].over=0;
   }
   
+  for(i=0;i<NUM_AXIES;++i) {
+    a[i].over=maxsteps/2;
+  }
 
 #ifdef VERBOSE
   Serial.println(F("Start >"));

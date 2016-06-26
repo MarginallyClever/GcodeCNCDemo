@@ -297,6 +297,7 @@ ISR(TIMER1_COMPA_vect) {
     // set the direction pins
     for(j=0;j<NUM_AXIES;++j) {
       digitalWrite( motors[j].dir_pin, line_segments[current_segment].a[j].dir );
+      seg.a[j].over = seg.steps/2;
     }
     // set frequency to segment feed rate
     timer_set_frequency(seg.feed_rate);
@@ -568,35 +569,35 @@ void ready() {
  * set up the pins for each motor
  */
 void motor_setup() {
-  motors[0].step_pin = MOTORS_0_STEP_PIN;
-  motors[0].dir_pin = MOTORS_0_DIR_PIN;
-  motors[0].enable_pin = MOTORS_0_ENABLE_PIN;
-  motors[0].limit_switch_pin = MOTORS_0_LIMIT_SWITCH_PIN;
+  motors[0].step_pin = MOTOR_0_STEP_PIN;
+  motors[0].dir_pin = MOTOR_0_DIR_PIN;
+  motors[0].enable_pin = MOTOR_0_ENABLE_PIN;
+  motors[0].limit_switch_pin = MOTOR_0_LIMIT_SWITCH_PIN;
 
-  motors[1].step_pin = MOTORS_1_STEP_PIN;
-  motors[1].dir_pin = MOTORS_1_DIR_PIN;
-  motors[1].enable_pin = MOTORS_1_ENABLE_PIN;
-  motors[1].limit_switch_pin = MOTORS_1_LIMIT_SWITCH_PIN;
+  motors[1].step_pin = MOTOR_1_STEP_PIN;
+  motors[1].dir_pin = MOTOR_1_DIR_PIN;
+  motors[1].enable_pin = MOTOR_1_ENABLE_PIN;
+  motors[1].limit_switch_pin = MOTOR_1_LIMIT_SWITCH_PIN;
 
-  motors[2].step_pin = MOTORS_2_STEP_PIN;
-  motors[2].dir_pin = MOTORS_2_DIR_PIN;
-  motors[2].enable_pin = MOTORS_2_ENABLE_PIN;
-  motors[2].limit_switch_pin = MOTORS_2_LIMIT_SWITCH_PIN;
+  motors[2].step_pin = MOTOR_2_STEP_PIN;
+  motors[2].dir_pin = MOTOR_2_DIR_PIN;
+  motors[2].enable_pin = MOTOR_2_ENABLE_PIN;
+  motors[2].limit_switch_pin = MOTOR_2_LIMIT_SWITCH_PIN;
 
-  motors[3].step_pin = MOTORS_3_STEP_PIN;
-  motors[3].dir_pin = MOTORS_3_DIR_PIN;
-  motors[3].enable_pin = MOTORS_3_ENABLE_PIN;
-  motors[3].limit_switch_pin = MOTORS_3_LIMIT_SWITCH_PIN;
+  motors[3].step_pin = MOTOR_3_STEP_PIN;
+  motors[3].dir_pin = MOTOR_3_DIR_PIN;
+  motors[3].enable_pin = MOTOR_3_ENABLE_PIN;
+  motors[3].limit_switch_pin = MOTOR_3_LIMIT_SWITCH_PIN;
 
-  motors[4].step_pin = MOTORS_4_STEP_PIN;
-  motors[4].dir_pin = MOTORS_4_DIR_PIN;
-  motors[4].enable_pin = MOTORS_4_ENABLE_PIN;
-  motors[4].limit_switch_pin = MOTORS_4_LIMIT_SWITCH_PIN;
+  motors[4].step_pin = MOTOR_4_STEP_PIN;
+  motors[4].dir_pin = MOTOR_4_DIR_PIN;
+  motors[4].enable_pin = MOTOR_4_ENABLE_PIN;
+  motors[4].limit_switch_pin = MOTOR_4_LIMIT_SWITCH_PIN;
 
-  motors[5].step_pin = MOTORS_5_STEP_PIN;
-  motors[5].dir_pin = MOTORS_5_DIR_PIN;
-  motors[5].enable_pin = MOTORS_5_ENABLE_PIN;
-  motors[5].limit_switch_pin = MOTORS_5_LIMIT_SWITCH_PIN;
+  motors[5].step_pin = MOTOR_5_STEP_PIN;
+  motors[5].dir_pin = MOTOR_5_DIR_PIN;
+  motors[5].enable_pin = MOTOR_5_ENABLE_PIN;
+  motors[5].limit_switch_pin = MOTOR_5_LIMIT_SWITCH_PIN;
   
   int i;
   for(i=0;i<NUM_AXIES;++i) {  

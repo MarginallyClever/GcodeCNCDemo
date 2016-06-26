@@ -173,7 +173,9 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
     a[i].dir=a[i].delta > 0 ? 1:-1;
     a[i].absdelta = abs(a[i].delta);
     if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
-    a[i].over=0;
+  }
+  for(i=0;i<NUM_AXIES;++i) {
+    a[i].over=maxsteps/2;
   }
 
   a[0].dir=-a[0].dir;  // because the motors are mounted in opposite directions

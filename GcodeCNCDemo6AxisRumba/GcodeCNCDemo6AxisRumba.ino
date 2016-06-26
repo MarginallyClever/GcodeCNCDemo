@@ -152,10 +152,12 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
 
   for(i=0;i<NUM_AXIES;++i) {
     a[i].absdelta = abs(a[i].delta);
-    a[i].over=0;
     if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
     // set the direction once per movement
     digitalWrite(motors[i].dir_pin,a[i].delta>0?HIGH:LOW);
+  }
+  for(i=0;i<NUM_AXIES;++i) {
+    a[i].over=maxsteps/2;
   }
   
   long dt = MAX_FEEDRATE / 5000;
