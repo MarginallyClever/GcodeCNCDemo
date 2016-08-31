@@ -180,11 +180,11 @@ void arc(float cx,float cy,float x,float y,float dir) {
  **/
 float parsenumber(char code,float val) {
   char *ptr=buffer;
-  while(ptr && *ptr && ptr<buffer+sofar) {
+  while(ptr>1 && *ptr && ptr<buffer+sofar) {
     if(*ptr==code) {
       return atof(ptr+1);
     }
-    ptr=strchr(ptr,' ')+1;
+    ptr=strchr(ptr,' ');
   }
   return val;
 } 
