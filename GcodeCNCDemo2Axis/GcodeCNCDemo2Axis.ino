@@ -184,7 +184,7 @@ float parsenumber(char code,float val) {
     if(*ptr==code) {
       return atof(ptr+1);
     }
-    ptr=strchr(ptr,' ');
+    ptr=strchr(ptr,' ')+1;
   }
   return val;
 } 
