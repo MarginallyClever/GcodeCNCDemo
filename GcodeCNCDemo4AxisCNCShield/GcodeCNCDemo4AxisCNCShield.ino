@@ -223,16 +223,16 @@ static float atan3(float dy,float dx) {
  * @input code the character to look for.
  * @input val the return value if /code/ is not found.
  **/
-float parsenumber(char code,float val) {
-  char *ptr=buffer;
-  while(ptr && *ptr && ptr<buffer+sofar) {
-    if(*ptr==code) {
-      return atof(ptr+1);
+float parseNumber(char code,float val) {
+  char *ptr=serialBuffer;  // start at the beginning of buffer
+  while(ptr>1 && *ptr && ptr<serialBuffer+sofar) {  // walk to the end
+    if(*ptr==code) {  // if you find code on your walk,
+      return atof(ptr+1);  // convert the digits that follow into a float and return it
     }
-    ptr=strchr(ptr,' ')+1;
+    ptr=strchr(ptr,' ')+1;  // take a step from here to the letter after the next space
   }
-  return val;
-} 
+  return val;  // end reached, nothing found, return default val.
+}
 
 
 /**
