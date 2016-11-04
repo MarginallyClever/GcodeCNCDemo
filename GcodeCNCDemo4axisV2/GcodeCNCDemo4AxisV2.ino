@@ -97,7 +97,7 @@ void pause(long ms) {
  * @input nfr the new speed in steps/second
  */
 void feedrate(float nfr) {
-  if(fr==nfr) return;  // same as last time?  quit now.
+  if(fr==nfr) return;  // same as last time?  Quit now.
 
   if(nfr>MAX_FEEDRATE || nfr<MIN_FEEDRATE) {  // don't allow crazy feed rates
     Serial.print(F("New feedrate must be greater than "));
@@ -136,13 +136,13 @@ void onestep(int motor,int direction) {
   char *letter="XYZE";
   Serial.print(letter[motor]);
 #endif
-  m[motor]->onestep(direction>0?FORWARD:BACKWARD,SINGLE);
+  m[motor] -> onestep(direction>0?FORWARD:BACKWARD,SINGLE);
 }
 
 
 void release() {
   int i;
-  for(i=0;i<4;++i) {
+  for(i=0; i<4; ++i) {
     m[i]->release();
   }
 }
@@ -161,13 +161,13 @@ void line(float newx,float newy,float newz,float newe) {
   
   long i,j,maxsteps=0;
 
-  for(i=0;i<NUM_AXIES;++i) {
+  for(i=0; i<NUM_AXIES; ++i) {
     a[i].absdelta = abs(a[i].delta);
     a[i].dir = a[i].delta > 0 ? 1:-1;
     if( maxsteps < a[i].absdelta ) maxsteps = a[i].absdelta;
   }
   
-  for(i=0;i<NUM_AXIES;++i) {
+  for(i=0; i<NUM_AXIES; ++i) {
     a[i].over=maxsteps/2;
   }
 
@@ -175,8 +175,8 @@ void line(float newx,float newy,float newz,float newe) {
   Serial.println(F("Start >"));
 #endif
   
-  for( i=0; i<maxsteps; ++i ) {
-    for(j=0;j<NUM_AXIES;++j) {
+  for(i=0; i<maxsteps; ++i) {
+    for(j=0; j<NUM_AXIES; ++j) {
       a[j].over += a[j].absdelta;
       if(a[j].over >= maxsteps) {
         a[j].over -= maxsteps;
@@ -189,7 +189,6 @@ void line(float newx,float newy,float newz,float newe) {
 #ifdef VERBOSE
   Serial.println(F("< Done."));
 #endif
-
   position(newx,newy,newz,newe);
 }
 
@@ -272,7 +271,7 @@ float parsenumber(char code,float val) {
  * @input code the string.
  * @input val the float.
  */
-void output(char *code,float val) {
+void output(char *code, float val) {
   Serial.print(code);
   Serial.println(val);
 }
@@ -325,7 +324,7 @@ void processCommand() {
   // is there a line number?
   cmd=parsenumber('N',-1);
   if(cmd!=-1 && buffer[0]=='N') {  // line number must appear first on the line
-    if( cmd != line_number ) {
+    if(cmd != line_number) {
       // wrong line number error
       Serial.print(F("BADLINENUM "));
       Serial.println(line_number);
@@ -340,7 +339,7 @@ void processCommand() {
       while(buffer[c]!='*') checksum ^= buffer[c++];
       c++; // skip *
       int against = strtod(buffer+c,NULL);
-      if( checksum != against ) {
+      if(checksum != against) {
         Serial.print(F("BADCHECKSUM "));
         Serial.println(line_number);
         return;
