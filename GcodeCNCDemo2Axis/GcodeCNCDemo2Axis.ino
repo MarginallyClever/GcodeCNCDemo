@@ -7,22 +7,20 @@
 
 #include "config.h"
 
-
 //------------------------------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------------------------------
 
-char buffer[MAX_BUF];  // where we store the message until we get a newline
-int sofar;  // how much is in the buffer
-
-float px, py;  // location
+char  buffer[MAX_BUF];  // where we store the message until we get a newline
+int   sofar;            // how much is in the buffer
+float px, py;      // location
 
 // speeds
-float fr=0;  // human version
-long step_delay;  // machine version
+float fr =     0;  // human version
+long  step_delay;  // machine version
 
 // settings
-char mode_abs=1;  // absolute mode?
+char mode_abs=1;   // absolute mode?
 
 
 //------------------------------------------------------------------------------
@@ -56,7 +54,7 @@ void feedrate(float nfr) {
     return;
   }
   step_delay = 1000000.0/nfr;
-  fr=nfr;
+  fr = nfr;
 }
 
 
@@ -78,49 +76,49 @@ void position(float npx,float npy) {
  * @input newy the destination y position
  **/
 void line(float newx,float newy) {
-  long dx=newx-px;
-  long dy=newy-py;
-  int dirx=dx>0?1:-1;
-  int diry=dy>0?-1:1;  // because the motors are mounted in opposite directions
-  dx=abs(dx);
-  dy=abs(dy);
-
   long i;
-  long over=0;
+  long over= 0;
+  
+  long dx  = newx-px;
+  long dy  = newy-py;
+  int dirx = dx>0?1:-1;
+  int diry = dy>0?-1:1;  // because the motors are mounted in opposite directions
+  dx = abs(dx);
+  dy = abs(dy);
 
   if(dx>dy) {
-    over=dx/2;
-    for(i=0;i<dx;++i) {
+    over = dx/2;
+    for(i=0; i<dx; ++i) {
       m1step(dirx);
-      over+=dy;
+      over += dy;
       if(over>=dx) {
-        over-=dx;
+        over -= dx;
         m2step(diry);
       }
       pause(step_delay);
     }
   } else {
-    over=dy/2;
-    for(i=0;i<dy;++i) {
+    over = dy/2;
+    for(i=0; i<dy; ++i) {
       m2step(diry);
-      over+=dx;
-      if(over>=dy) {
-        over-=dy;
+      over += dx;
+      if(over >= dy) {
+        over -= dy;
         m1step(dirx);
       }
       pause(step_delay);
     }
   }
 
-  px=newx;
-  py=newy;
+  px = newx;
+  py = newy;
 }
 
 
 // returns angle of dy/dx as a value from 0...2PI
 float atan3(float dy,float dx) {
-  float a=atan2(dy,dx);
-  if(a<0) a=(PI*2.0)+a;
+  float a = atan2(dy,dx);
+  if(a<0) a = (PI*2.0)+a;
   return a;
 }
 
