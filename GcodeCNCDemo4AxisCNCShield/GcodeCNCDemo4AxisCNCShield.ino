@@ -15,12 +15,12 @@
 //------------------------------------------------------------------------------
 // CONSTANTS
 //------------------------------------------------------------------------------
-//#define VERBOSE              (1)  // add to get a lot more serial output.
+//#define VERBOSE              (1)       // add to get a lot more serial output.
 
-#define VERSION              (2)  // firmware version
-#define BAUD                 (115200)  // How fast is the Arduino talking?
-#define MAX_BUF              (64)  // What is the longest message Arduino can store?
-#define STEPS_PER_TURN       (200)  // depends on your stepper motor.  most are 200.
+#define VERSION              (2)                      // firmware version
+#define BAUD                 (115200)                 // How fast is the Arduino talking?(BAUD Rate of Arduino)
+#define MAX_BUF              (64)                     // What is the longest message Arduino can store?
+#define STEPS_PER_TURN       (200)                    // depends on your stepper motor.  most are 200.
 #define STEPS_PER_MM         (STEPS_PER_TURN*16/0.8)  // (400*16)/0.8 with a M5 spindle
 #define MAX_FEEDRATE         (1000000)
 #define MIN_FEEDRATE         (1)
