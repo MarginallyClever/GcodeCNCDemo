@@ -15,10 +15,10 @@
 #define BAUD                 (57600)  // How fast is the Arduino talking?
 #define MAX_BUF              (64)  // What is the longest message Arduino can store?
 #define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY       (50)
+#define MIN_STEP_DELAY       (50)   // Minimum stepper motor delay.
 #define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
 #define MIN_FEEDRATE         (0.01)
-#define NUM_AXIES            (6)
+#define NUM_AXIES            (6)    // Six-Axies
 
 // for arc directions
 #define ARC_CW          (1)
