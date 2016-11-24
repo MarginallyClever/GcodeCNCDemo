@@ -14,7 +14,7 @@
 
 #define VERSION              (2)  // firmware version
 
-#define BAUD                 (57600)  // How fast is the Arduino talking?
+#define BAUD                 (57600)  // How fast is the Arduino talking?(The BAUD Rate between arduino)
 #define MAX_BUF              (64)  // What is the longest message Arduino can store?
 
 #define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
@@ -169,24 +169,24 @@ float feedrate(float nfr) {
  * @input npx new position x
  * @input npy new position y
  */
-void position(float npx,float npy,float npz,float npu,float npv,float npw) {
+void position(float npx, float npy, float npz, float npu, float npv, float npw) {
   // here is a good place to add sanity tests
-  px=npx;
-  py=npy;
-  pz=npz;
-  pu=npu;
-  pv=npv;
-  pw=npw;
+  px = npx;
+  py = npy;
+  pz = npz;
+  pu = npu;
+  pv = npv;
+  pw = npw;
 }
 
 
 int get_next_segment(int i) {
-  return ( i + 1 ) % MAX_SEGMENTS;
+  return (( i + 1 ) % MAX_SEGMENTS);
 }
 
 
 int get_prev_segment(int i) {
-  return ( i + MAX_SEGMENTS - 1 ) % MAX_SEGMENTS;
+  return (( i + MAX_SEGMENTS - 1 ) % MAX_SEGMENTS);
 }
 
 
@@ -214,6 +214,7 @@ void timer_set_frequency(long desired_freq_hz) {
   int prescaler_index=-1;
   int prescalers[] = {1,8,64,256,1024};
   long counter_value;
+  
   do {
     ++prescaler_index;
     //  Divide CPU frequency through the choosen prescaler (16000000 / 256 = 62500)
