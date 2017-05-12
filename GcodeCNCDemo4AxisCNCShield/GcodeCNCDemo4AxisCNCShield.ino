@@ -34,7 +34,7 @@
 typedef struct {
   long delta;  // number of steps to move
   long absdelta;
-  long over;  // for dx/dy bresenham calculations
+  long over;   // for dx/dy bresenham calculations
 } Axis;
 
 
@@ -79,7 +79,11 @@ long line_number=0;
  */
 void pause(long ms) {
   delay(ms/1000);
-  delayMicroseconds(ms%1000);  // delayMicroseconds doesn't work for values > ~16k.
+  if(ms%1000 <= 16000){
+    delayMicroseconds(ms%1000);  // delayMicroseconds doesn't work for values > ~16k.
+  } else {
+    delayMicroseconds(15999);
+    delsyMicroseconds(ms%1000 - 15999);
 }
 
 
