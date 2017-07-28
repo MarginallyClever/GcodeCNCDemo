@@ -256,7 +256,7 @@ static void arc(float cx,float cy,float x,float y,float dir) {
  **/
 float parseNumber(char code,float val) {
   char *ptr=serialBuffer;  // start at the beginning of buffer
-  while(ptr>1 && *ptr && ptr<serialBuffer+sofar) {  // walk to the end
+  while((long)ptr > 1 && (*ptr) && (long)ptr < (long)serialBuffer+sofar) {  // walk to the end
     if(*ptr==code) {  // if you find code on your walk,
       return atof(ptr+1);  // convert the digits that follow into a float and return it
     }
