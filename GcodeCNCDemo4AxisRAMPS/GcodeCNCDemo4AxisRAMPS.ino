@@ -49,7 +49,7 @@ Axis a[NUM_AXIES];  // for line()
 Axis atemp;  // for line()
 Motor motors[NUM_AXIES];
 
-char buffer[MAX_BUF];  // where we store the message until we get a ';'
+char serialBuffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
 // speeds
@@ -215,13 +215,13 @@ static float atan3(float dy,float dx) {
 
 
 /**
- * Look for character /code/ in the buffer and read the float that immediately follows it.
+ * Look for character /code/ in the serialBuffer and read the float that immediately follows it.
  * @return the value found.  If nothing is found, /val/ is returned.
  * @input code the character to look for.
  * @input val the return value if /code/ is not found.
  **/
 float parseNumber(char code,float val) {
-  char *ptr=serialBuffer;  // start at the beginning of buffer
+  char *ptr=serialBuffer;  // start at the beginning of serialBuffer
   while((long)ptr > 1 && (*ptr) && (long)ptr < (long)serialBuffer+sofar) {  // walk to the end
     if(*ptr==code) {  // if you find code on your walk,
       return atof(ptr+1);  // convert the digits that follow into a float and return it
@@ -238,7 +238,7 @@ float parseNumber(char code,float val) {
  * @input code the string.
  * @input val the float.
  */
-void output(char *code,float val) {
+void output(const char *code,float val) {
   Serial.print(code);
   Serial.println(val);
 }
@@ -277,34 +277,34 @@ void help() {
 
 
 /**
- * Read the input buffer and find any recognized commands.  One G or M command per line.
+ * Read the serialBuffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  int cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0:
   case  1: { // line
-    feedrate(parsenumber('F',fr));
-    line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
+    feedrate(parseNumber('F',fr));
+    line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+          parseNumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
     }
   case  2:
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0),
-              parsenumber('Z',0),
-              parsenumber('E',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0),
+              parseNumber('Z',0),
+              parseNumber('E',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case  17:  motor_enable();  break;
   case  18:  motor_disable();  break;
@@ -316,10 +316,10 @@ void processCommand() {
 
 
 /**
- * prepares the input buffer to receive a new message and tells the serial connected device it is ready for more.
+ * prepares the serialBuffer to receive a new message and tells the serial connected device it is ready for more.
  */
 void ready() {
-  sofar=0;  // clear input buffer
+  sofar=0;  // clear serialBuffer
   Serial.print(F(">"));  // signal ready to receive input
 }
 
@@ -401,10 +401,10 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(sofar<MAX_BUF-1) serialBuffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      buffer[sofar]=0;  // end the buffer so string functions work right
+      serialBuffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
       ready();
