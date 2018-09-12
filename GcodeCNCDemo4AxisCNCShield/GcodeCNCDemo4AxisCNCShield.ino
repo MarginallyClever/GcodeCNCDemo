@@ -224,8 +224,8 @@ static float atan3(float dy,float dx) {
  * @input val the return value if /code/ is not found.
  **/
 float parseNumber(char code,float val) {
-  char *ptr=serialBuffer;  // start at the beginning of buffer
-  while((long)ptr > 1 && (*ptr) && (long)ptr < (long)serialBuffer+sofar) {  // walk to the end
+  char *ptr=buffer;  // start at the beginning of buffer
+  while((long)ptr > 1 && (*ptr) && (long)ptr < (long)buffer+sofar) {  // walk to the end
     if(*ptr==code) {  // if you find code on your walk,
       return atof(ptr+1);  // convert the digits that follow into a float and return it
     }
@@ -283,31 +283,31 @@ void help() {
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  int cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0:
   case  1: { // line
-    feedrate(parsenumber('F',fr));
-    line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
+    feedrate(parseNumber('F',fr));
+    line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+          parseNumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
     }
   case  2:
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0),
-              parsenumber('Z',0),
-              parsenumber('E',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0),
+              parseNumber('Z',0),
+              parseNumber('E',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case  17:  motor_enable();  break;
   case  18:  motor_disable();  break;
