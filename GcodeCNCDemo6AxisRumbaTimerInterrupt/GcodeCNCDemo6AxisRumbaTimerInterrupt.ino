@@ -17,7 +17,7 @@
 #define BAUD                 (57600)  // How fast is the Arduino talking?
 #define MAX_BUF              (64)  // What is the longest message Arduino can store?
 
-#define STEPS_PER_TURN       (400)  // depends on your stepper motor.  most are 200.
+#define STEPS_PER_TURN       (3200)  // depends on your stepper motor.  most are 200.
 #define MAX_FEEDRATE         (200)
 #define MIN_FEEDRATE         (0.01)
 
@@ -110,7 +110,7 @@ volatile int current_segment;
 volatile int last_segment;
 unsigned int step_loops;
 
-char buffer[MAX_BUF];  // where we store the message until we get a ';'
+char serialBuffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
 // speeds
@@ -506,46 +506,46 @@ void help() {
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  int cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0:
   case  1: { // line
-      feedrate(parsenumber('F',feed_rate));
-      line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-            parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-            parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-            parsenumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
-            parsenumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
-            parsenumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw),
+      feedrate(parseNumber('F',feed_rate));
+      line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+            parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+            parseNumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+            parseNumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
+            parseNumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
+            parseNumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw),
             feed_rate );
       break;
     }
   case 2:
   case 3: {  // arc
-      feedrate(parsenumber('F',feed_rate));
-      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+      feedrate(parseNumber('F',feed_rate));
+      arc(parseNumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           (cmd==2) ? -1 : 1,
           feed_rate );
       break;
     }
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0),
-              parsenumber('Z',0),
-              parsenumber('U',0),
-              parsenumber('V',0),
-              parsenumber('W',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0),
+              parseNumber('Z',0),
+              parseNumber('U',0),
+              parseNumber('V',0),
+              parseNumber('W',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case 17:  motor_enable();  break;
   case 18:  motor_disable();  break;
@@ -649,10 +649,10 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(sofar<MAX_BUF-1) serialBuffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      buffer[sofar]=0;  // end the buffer so string functions work right
+      serialBuffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
       ready();
