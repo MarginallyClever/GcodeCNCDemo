@@ -15,9 +15,10 @@
 #define AMS1 (1)
 #define AMS2 (2)
 #define HG7881 (3) // HG7881 Stepper Driver
+#define PASS_STEP (4) // pass-through 4 wire Stepper.h driver
 
 // change this line to select a different control board for your CNC.
-#define CONTROLLER AMS1
+#define CONTROLLER PASS_STEP
 
 
 #define VERSION        (1)  // firmware version
