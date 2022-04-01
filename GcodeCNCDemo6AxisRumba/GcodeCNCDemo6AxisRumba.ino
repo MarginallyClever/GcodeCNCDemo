@@ -53,7 +53,7 @@ Axis a[NUM_AXIES];  // for line()
 Axis atemp;  // for line()
 Motor motors[NUM_AXIES];
 
-char buffer[MAX_BUF];  // where we store the message until we get a ';'
+char serialBuffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
 // speeds
@@ -272,7 +272,7 @@ static void arc(float cx,float cy,float x,float y,float dir) {
  * @input code the character to look for.
  * @input val the return value if /code/ is not found.
  **/
-float parseNumber(char code,float val) {
+float parsenumber(char code,float val) {
   char *ptr=serialBuffer;  // start at the beginning of buffer
   while((long)ptr > 1 && (*ptr) && (long)ptr < (long)serialBuffer+sofar) {  // walk to the end
     if(*ptr==code) {  // if you find code on your walk,
@@ -476,10 +476,10 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(sofar<MAX_BUF-1) serialBuffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      buffer[sofar]=0;  // end the buffer so string functions work right
+      serialBuffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
       ready();
