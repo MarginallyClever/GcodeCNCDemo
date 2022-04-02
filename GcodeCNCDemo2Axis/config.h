@@ -16,9 +16,10 @@
 #define AMS2 (2)
 #define HG7881 (3) // HG7881 Stepper Driver
 #define PASS_STEP (4) // pass-through 4 wire Stepper.h driver
+#define CNCV3 (5) // CNC Shield V3 https://blog.protoneer.co.nz/arduino-cnc-shield/
 
 // change this line to select a different control board for your CNC.
-#define CONTROLLER PASS_STEP
+#define CONTROLLER CNCV3
 
 
 #define VERSION        (1)  // firmware version
@@ -28,7 +29,7 @@
 #define MIN_STEP_DELAY (50.0)
 #define MAX_FEEDRATE   (1000000.0/MIN_STEP_DELAY)
 #define MIN_FEEDRATE   (0.01)
-
+//#define INVERT_Y     (1) // invert Y axis direction
 
 // for arc directions
 #define ARC_CW          (1)

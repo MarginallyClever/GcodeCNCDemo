@@ -37,14 +37,14 @@
 
 void m1step(int dir) {
   digitalWrite(M1_ENA,LOW);
-  digitalWrite(M1_DIR,dir);
+  digitalWrite(M1_DIR,dir==1? HIGH:LOW);
   digitalWrite(M1_STEP,HIGH);
   digitalWrite(M1_STEP,LOW);
 }
 
 void m2step(int dir) {
   digitalWrite(M2_ENA,LOW);
-  digitalWrite(M2_DIR,dir);
+  digitalWrite(M2_DIR,dir==1?HIGH:LOW);
   digitalWrite(M2_STEP,HIGH);
   digitalWrite(M2_STEP,LOW);
 }

@@ -82,7 +82,11 @@ void line(float newx,float newy) {
   long dx  = newx-px;
   long dy  = newy-py;
   int dirx = dx>0?1:-1;
+  #ifdef INVERT_Y
   int diry = dy>0?-1:1;  // because the motors are mounted in opposite directions
+  #else
+  int diry = dy>0?1:-1;
+  #endif
   dx = abs(dx);
   dy = abs(dy);
 

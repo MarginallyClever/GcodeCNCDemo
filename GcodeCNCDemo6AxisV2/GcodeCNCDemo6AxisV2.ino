@@ -19,6 +19,8 @@
 #define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
 #define MIN_FEEDRATE         (0.01)
 #define NUM_AXIES            (6)    // Six-Axies
+//#define INVERT_012         (1) // invert direction for Axes 0,1,2
+
 
 // for arc directions
 #define ARC_CW          (1)
@@ -178,10 +180,11 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
     a[i].over=maxsteps/2;
   }
 
+#ifdef INVERT_012
   a[0].dir=-a[0].dir;  // because the motors are mounted in opposite directions
   a[1].dir=-a[1].dir;  // because the motors are mounted in opposite directions
   a[2].dir=-a[2].dir;  // because the motors are mounted in opposite directions
-
+#endif
   
 #ifdef VERBOSE
   Serial.println(F("Start >"));
