@@ -1,51 +1,58 @@
-#ifndef CONFIG_H
-#define CONFIG_H
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
 // dan@marginallycelver.com 2013-08-30
+// modified by lsahidin@yahoo.com added HG7881 stepper controller
+// modified by drf5na@gmail.com added a simple pass-through Stepper.h driver
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
 
+// Warning.
+// * to reduce and avoid overheat on HG7881, use M18 after every G00, G01, G02, G03 on Gcode * \\
+
+#if CONTROLLER == PASS_STEP
 
 //------------------------------------------------------------------------------
-// CONSTANTS
+// INCLUDES
 //------------------------------------------------------------------------------
-// supported control boards
-#define AMS1 (1)
-#define AMS2 (2)
-#define HG7881 (3) // HG7881 Stepper Driver
-#define PASS_STEP (4) // pass-through 4 wire Stepper.h driver
-
-// change this line to select a different control board for your CNC.
-#define CONTROLLER PASS_STEP
+#include <Stepper.h> // https://github.com/arduino-libraries/Stepper/blob/master/src/Stepper.h
 
 
-#define VERSION        (1)  // firmware version
-#define BAUD           (57600)  // How fast is the Arduino talking?
-#define MAX_BUF        (64)  // What is the longest message Arduino can store?
-#define STEPS_PER_TURN (400)  // depends on your stepper motor.  most are 200.
-#define MIN_STEP_DELAY (50.0)
-#define MAX_FEEDRATE   (1000000.0/MIN_STEP_DELAY)
-#define MIN_FEEDRATE   (0.01)
-
-
-// for arc directions
-#define ARC_CW          (1)
-#define ARC_CCW         (-1)
-// Arcs are split into many line segments.  How long are the segments?
-#define MM_PER_SEGMENT  (10)
+//------------------------------------------------------------------------------
+// GLOBALS
+//------------------------------------------------------------------------------
+// Initialize Stepper.h stepper controller
+// Stepper.h motor(Step, pinA_IA, pinA_IB, pinB_IA, pin_B_IB);
+Stepper m1((int)STEPS_PER_TURN, 6,7,8,9);
+Stepper m2((int)STEPS_PER_TURN, 5,4,3,2);
 
 
 //------------------------------------------------------------------------------
 // METHODS
 //------------------------------------------------------------------------------
-extern void m1step(int dir);
-extern void m2step(int dir);
-extern void disable();
-extern void setup_controller();
+
+void m1step(int dir) {
+    m1.step(dir);
+}
+
+void m2step(int dir) {
+    m2.step(dir);
+}
+
+void disable() {
+    //m1.release();
+    //m2.release();
+}
 
 
+void setup_controller() {
+    ;
+    m1.setSpeed(100);
+    m2.setSpeed(100);
+}
+
+
+#endif  // CONTROLLER == PASS_STEP
 /**
 * This file is part of GcodeCNCDemo.
 *
@@ -62,4 +69,5 @@ extern void setup_controller();
 * You should have received a copy of the GNU General Public License
 * along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 */
-#endif
+
+
