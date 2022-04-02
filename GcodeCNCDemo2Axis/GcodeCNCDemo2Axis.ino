@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
-// dan@marginallycelver.com 2013-08-30
+// dan@marginallyclever.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -11,8 +11,8 @@
 // GLOBALS
 //------------------------------------------------------------------------------
 
-char  buffer[MAX_BUF];  // where we store the message until we get a newline
-int   sofar;            // how much is in the buffer
+char  serialBuffer[MAX_BUF];  // where we store the message until we get a newline
+int   sofar;            // how much is in the serialBuffer
 float px, py;      // location
 
 // speeds
@@ -176,9 +176,9 @@ void arc(float cx,float cy,float x,float y,float dir) {
  * @input code the character to look for.
  * @input val the return value if /code/ is not found.
  **/
-float parsenumber(char code,float val) {
-  char *ptr=buffer;  // start at the beginning of buffer
-  while((long)ptr > 1 && (*ptr) && (long)ptr < (long)buffer+sofar) {  // walk to the end
+float parseNumber(char code,float val) {
+  char *ptr=serialBuffer;  // start at the beginning of buffer
+  while((long)ptr > 1 && (*ptr) && (long)ptr < (long)serialBuffer+sofar) {  // walk to the end
     if(*ptr==code) {  // if you find code on your walk,
       return atof(ptr+1);  // convert the digits that follow into a float and return it
     }
@@ -236,36 +236,36 @@ void help() {
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  int cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0:
   case  1: { // line
-    feedrate(parsenumber('F',fr));
-    line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py) );
+    feedrate(parseNumber('F',fr));
+    line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py) );
     break;
     }
   case 2:
   case 3: {  // arc
-      feedrate(parsenumber('F',fr));
-      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+      feedrate(parseNumber('F',fr));
+      arc(parseNumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           (cmd==2) ? -1 : 1);
       break;
     }
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case 18:  // disable motors
     disable();
@@ -309,10 +309,10 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(sofar<MAX_BUF-1) serialBuffer[sofar++]=c;  // store it
     if((c=='\n') || (c == '\r')) {
       // entire message received
-      buffer[sofar]=0;  // end the buffer so string functions work right
+      serialBuffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
       ready();

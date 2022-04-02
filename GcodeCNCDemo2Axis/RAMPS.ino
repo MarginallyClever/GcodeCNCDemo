@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
-// dan@marginallycelver.com 2015-12-23
+// dan@marginallyclever.com 2015-12-23
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.

@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
-// dan@marginallycelver.com 2013-08-30
+// dan@marginallyclever.com 2013-08-30
 // modified by lsahidin@yahoo.com added HG7881 stepper controller
 //------------------------------------------------------------------------------
 // Copyright at end of file.

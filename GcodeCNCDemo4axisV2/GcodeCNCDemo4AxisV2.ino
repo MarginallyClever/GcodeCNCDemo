@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 4 Axis CNC Demo v2 - supports Adafruit motor shield v2
-// dan@marginallycelver.com 2013-08-30
+// dan@marginallyclever.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -63,7 +63,7 @@ Axis a[4];  // for line()
 Axis atemp;  // for line()
 
 
-char buffer[MAX_BUF];  // where we store the message until we get a ';'
+char serialBuffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
 float px, py, pz, pe;  // location
@@ -317,13 +317,13 @@ void help() {
  */
 void processCommand() {
   // blank lines
-  if(buffer[0]==';') return;
+  if(serialBuffer[0]==';') return;
   
   long cmd;
   
   // is there a line number?
-  cmd=parsenumber('N',-1);
-  if(cmd!=-1 && buffer[0]=='N') {  // line number must appear first on the line
+  cmd=parseNumber('N',-1);
+  if(cmd!=-1 && serialBuffer[0]=='N') {  // line number must appear first on the line
     if(cmd != line_number) {
       // wrong line number error
       Serial.print(F("BADLINENUM "));
@@ -332,13 +332,13 @@ void processCommand() {
     }
   
     // is there a checksum?
-    if(strchr(buffer,'*')!=0) {
+    if(strchr(serialBuffer,'*')!=0) {
       // yes.  is it valid?
       char checksum=0;
       int c=0;
-      while(buffer[c]!='*') checksum ^= buffer[c++];
+      while(serialBuffer[c]!='*') checksum ^= serialBuffer[c++];
       c++; // skip *
-      int against = strtod(buffer+c,NULL);
+      int against = strtod(serialBuffer+c,NULL);
       if(checksum != against) {
         Serial.print(F("BADCHECKSUM "));
         Serial.println(line_number);
@@ -353,40 +353,40 @@ void processCommand() {
     line_number++;
   }
 
-  cmd = parsenumber('G',-1);
+  cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0: 
   case  1: { // line
-    feedrate(parsenumber('F',fr));
-    line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
+    feedrate(parseNumber('F',fr));
+    line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+          parseNumber('E',(mode_abs?pe:0)) + (mode_abs?0:pe) );
     break;
     }
   case 2:
   case 3: {  // arc
-      feedrate(parsenumber('F',fr));
-      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+      feedrate(parseNumber('F',fr));
+      arc(parseNumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           (cmd==2) ? -1 : 1);
       break;
     }
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0),
-              parsenumber('Z',0),
-              parsenumber('E',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0),
+              parseNumber('Z',0),
+              parseNumber('E',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case 18:  // disable motors
     release();
@@ -436,10 +436,10 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(sofar<MAX_BUF-1) serialBuffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      buffer[sofar]=0;  // end the buffer so string functions work right
+      serialBuffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
       ready();

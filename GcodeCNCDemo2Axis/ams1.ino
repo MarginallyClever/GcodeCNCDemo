@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
-// dan@marginallycelver.com 2013-08-30
+// dan@marginallyclever.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 // INCLUDES
 //------------------------------------------------------------------------------
-#include <AFMotorDrawbot.h>
+#include <AFMotorDrawbot.h> // https://github.com/MarginallyClever/GcodeCNCDemo/tree/master/arduino_libraries/AFMotorDrawbot
 
 
 //------------------------------------------------------------------------------
