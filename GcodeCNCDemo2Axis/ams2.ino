@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
-// dan@marginallycelver.com 2013-08-30
+// dan@marginallyclever.com 2013-08-30
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -18,7 +18,7 @@
 #include "utility/Adafruit_PWMServoDriver.h"
 
 
-#if CONTROLLER = AMS2
+#if CONTROLLER == AMS2
 
 // Make sure you set the right address.  If you aren't sure,
 // use http://playground.arduino.cc/Main/I2cScanner to find it.
@@ -34,7 +34,7 @@
 //------------------------------------------------------------------------------
 
 // Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(AMS2_ADDRESS); 
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(AFMS2_ADDRESS); 
 Adafruit_StepperMotor *m1 = AFMS.getStepper(STEPS_PER_TURN, 1);  // to motor port #1 (M1 and M2)
 Adafruit_StepperMotor *m2 = AFMS.getStepper(STEPS_PER_TURN, 2);  // to motor port #2 (M3 and M4)
 

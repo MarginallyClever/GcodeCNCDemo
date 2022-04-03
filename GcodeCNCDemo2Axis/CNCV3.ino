@@ -1,48 +1,71 @@
 //------------------------------------------------------------------------------
 // 2 Axis CNC Demo
-// dan@marginallyclever.com 2013-08-30
+// dan@marginallyclever.com 2015-12-23
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
 
-#if CONTROLLER == AMS1
+#if CONTROLLER == CNCV3
 
 //------------------------------------------------------------------------------
 // INCLUDES
 //------------------------------------------------------------------------------
-#include <AFMotorDrawbot.h> // https://github.com/MarginallyClever/GcodeCNCDemo/tree/master/arduino_libraries/AFMotorDrawbot
 
+
+//------------------------------------------------------------------------------
+// CONSTANTS
+//------------------------------------------------------------------------------
+#define M1_STEP 2
+#define M1_DIR  5
+#define M1_ENA  8
+
+#define M2_STEP 3
+#define M2_DIR  6
+#define M2_ENA  8
+
+// limit switches
+#define SWITCH1 9
+#define SWITCH2 10
 
 //------------------------------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------------------------------
-// Initialize Adafruit stepper controller
-AF_Stepper m1((int)STEPS_PER_TURN, 1);
-AF_Stepper m2((int)STEPS_PER_TURN, 2);
-
-
+  
 //------------------------------------------------------------------------------
 // METHODS
 //------------------------------------------------------------------------------
 
 void m1step(int dir) {
-  m1.onestep(dir);
+  digitalWrite(M1_ENA,LOW);
+  digitalWrite(M1_DIR,dir==1? HIGH:LOW);
+  digitalWrite(M1_STEP,HIGH);
+  digitalWrite(M1_STEP,LOW);
 }
 
 void m2step(int dir) {
-  m2.onestep(dir);
+  digitalWrite(M2_ENA,LOW);
+  digitalWrite(M2_DIR,dir==1?HIGH:LOW);
+  digitalWrite(M2_STEP,HIGH);
+  digitalWrite(M2_STEP,LOW);
 }
 
 void disable() {
-    m1.release();
-    m2.release();
+  digitalWrite(M1_ENA,HIGH);
+  digitalWrite(M2_ENA,HIGH);
 }
 
 
-void setup_controller() {}
+void setup_controller() {
+  pinMode(M1_ENA,OUTPUT);
+  pinMode(M2_ENA,OUTPUT);
+  pinMode(M1_STEP,OUTPUT);
+  pinMode(M2_STEP,OUTPUT);
+  pinMode(M1_DIR,OUTPUT);
+  pinMode(M2_DIR,OUTPUT);
+}
 
 
-#endif  // CONTROLLER == AMS1
+#endif  // CONTROLLER == CNCV3
 /**
 * This file is part of GcodeCNCDemo.
 *
@@ -59,3 +82,6 @@ void setup_controller() {}
 * You should have received a copy of the GNU General Public License
 * along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 */
+
+
+

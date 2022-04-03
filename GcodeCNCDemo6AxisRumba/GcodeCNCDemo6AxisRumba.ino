@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 6 Axis CNC Demo Rumba - supports raprapdiscount RUMBA controller
-// dan@marginallycelver.com 2013-10-28
+// dan@marginallyclever.com 2013-10-28
 // RUMBA should be treated like a MEGA 2560 Arduino.
 //------------------------------------------------------------------------------
 // Copyright at end of file.
@@ -335,44 +335,44 @@ void help() {
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  int cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0:
   case  1: { // line
-    feedrate(parsenumber('F',fr));
-    line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
-          parsenumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
-          parsenumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw) );
+    feedrate(parseNumber('F',fr));
+    line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+          parseNumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
+          parseNumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
+          parseNumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw) );
     break;
     }
   case 2:
   case 3: {  // arc
-      feedrate(parsenumber('F',fr));
-      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+      feedrate(parseNumber('F',fr));
+      arc(parseNumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           (cmd==2) ? -1 : 1);
       break;
     }
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0),
-              parsenumber('Z',0),
-              parsenumber('U',0),
-              parsenumber('V',0),
-              parsenumber('W',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0),
+              parseNumber('Z',0),
+              parseNumber('U',0),
+              parseNumber('V',0),
+              parseNumber('W',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case 17:  motor_enable();  break;
   case 18:  motor_disable();  break;

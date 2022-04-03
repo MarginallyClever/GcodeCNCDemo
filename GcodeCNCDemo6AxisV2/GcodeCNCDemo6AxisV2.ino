@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 6 Axis CNC Demo v2 - supports Adafruit motor shield v2
-// dan@marginallycelver.com 2013-09-07
+// dan@marginallyclever.com 2013-09-07
 //------------------------------------------------------------------------------
 // Copyright at end of file.
 // please see http://www.github.com/MarginallyClever/GcodeCNCDemo for more information.
@@ -19,6 +19,8 @@
 #define MAX_FEEDRATE         (1000000/MIN_STEP_DELAY)
 #define MIN_FEEDRATE         (0.01)
 #define NUM_AXIES            (6)    // Six-Axies
+//#define INVERT_012         (1) // invert direction for Axes 0,1,2
+
 
 // for arc directions
 #define ARC_CW          (1)
@@ -63,7 +65,7 @@ Adafruit_StepperMotor *m[NUM_AXIES];
 Axis a[NUM_AXIES];  // for line()
 Axis atemp;  // for line()
 
-char buffer[MAX_BUF];  // where we store the message until we get a ';'
+char serialBuffer[MAX_BUF];  // where we store the message until we get a ';'
 int sofar;  // how much is in the buffer
 
 // speeds
@@ -178,10 +180,11 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
     a[i].over=maxsteps/2;
   }
 
+#ifdef INVERT_012
   a[0].dir=-a[0].dir;  // because the motors are mounted in opposite directions
   a[1].dir=-a[1].dir;  // because the motors are mounted in opposite directions
   a[2].dir=-a[2].dir;  // because the motors are mounted in opposite directions
-
+#endif
   
 #ifdef VERBOSE
   Serial.println(F("Start >"));
@@ -330,44 +333,44 @@ void help() {
  * Read the input buffer and find any recognized commands.  One G or M command per line.
  */
 void processCommand() {
-  int cmd = parsenumber('G',-1);
+  int cmd = parseNumber('G',-1);
   switch(cmd) {
   case  0:
   case  1: { // line
-    feedrate(parsenumber('F',fr));
-    line( parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
-          parsenumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
-          parsenumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
-          parsenumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw) );
+    feedrate(parseNumber('F',fr));
+    line( parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('Z',(mode_abs?pz:0)) + (mode_abs?0:pz),
+          parseNumber('U',(mode_abs?pu:0)) + (mode_abs?0:pu),
+          parseNumber('V',(mode_abs?pv:0)) + (mode_abs?0:pv),
+          parseNumber('W',(mode_abs?pw:0)) + (mode_abs?0:pw) );
     break;
     }
   case 2:
   case 3: {  // arc
-      feedrate(parsenumber('F',fr));
-      arc(parsenumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
-          parsenumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
-          parsenumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
+      feedrate(parseNumber('F',fr));
+      arc(parseNumber('I',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('J',(mode_abs?py:0)) + (mode_abs?0:py),
+          parseNumber('X',(mode_abs?px:0)) + (mode_abs?0:px),
+          parseNumber('Y',(mode_abs?py:0)) + (mode_abs?0:py),
           (cmd==2) ? -1 : 1);
       break;
     }
-  case  4:  pause(parsenumber('P',0)*1000);  break;  // dwell
+  case  4:  pause(parseNumber('P',0)*1000);  break;  // dwell
   case 90:  mode_abs=1;  break;  // absolute mode
   case 91:  mode_abs=0;  break;  // relative mode
   case 92:  // set logical position
-    position( parsenumber('X',0),
-              parsenumber('Y',0),
-              parsenumber('Z',0),
-              parsenumber('U',0),
-              parsenumber('V',0),
-              parsenumber('W',0) );
+    position( parseNumber('X',0),
+              parseNumber('Y',0),
+              parseNumber('Z',0),
+              parseNumber('U',0),
+              parseNumber('V',0),
+              parseNumber('W',0) );
     break;
   default:  break;
   }
 
-  cmd = parsenumber('M',-1);
+  cmd = parseNumber('M',-1);
   switch(cmd) {
   case 18:  // disable motors
     release();
@@ -420,10 +423,10 @@ void loop() {
   while(Serial.available() > 0) {  // if something is available
     char c=Serial.read();  // get it
     Serial.print(c);  // repeat it back so I know you got the message
-    if(sofar<MAX_BUF-1) buffer[sofar++]=c;  // store it
+    if(sofar<MAX_BUF-1) serialBuffer[sofar++]=c;  // store it
     if(c=='\n') {
       // entire message received
-      buffer[sofar]=0;  // end the buffer so string functions work right
+      serialBuffer[sofar]=0;  // end the buffer so string functions work right
       Serial.print(F("\r\n"));  // echo a return character for humans
       processCommand();  // do something with the command
       ready();

@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // 6 Axis CNC Demo Rumba - supports raprapdiscount RUMBA controller
-// dan@marginallycelver.com 2013-10-28
+// dan@marginallyclever.com 2013-10-28
 // RUMBA should be treated like a MEGA 2560 Arduino.
 //------------------------------------------------------------------------------
 // Copyright at end of file.
