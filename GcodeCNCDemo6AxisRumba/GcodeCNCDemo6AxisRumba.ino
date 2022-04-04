@@ -272,7 +272,7 @@ static void arc(float cx,float cy,float x,float y,float dir) {
  * @input code the character to look for.
  * @input val the return value if /code/ is not found.
  **/
-float parsenumber(char code,float val) {
+float parseNumber(char code,float val) {
   char *ptr=serialBuffer;  // start at the beginning of buffer
   while((long)ptr > 1 && (*ptr) && (long)ptr < (long)serialBuffer+sofar) {  // walk to the end
     if(*ptr==code) {  // if you find code on your walk,
