@@ -378,6 +378,8 @@ void line(int n0,int n1,int n2,int n3,int n4,int n5,float new_feed_rate) {
   Serial.print(F("Steps= "));  Serial.println(new_seg.steps_left);
 #endif
   last_segment = next_segment;
+  position(n0,n1,n2,n3,n4,n5);
+
 }
 
 
