@@ -163,6 +163,10 @@ void line(float newx,float newy,float newz,float newu,float newv,float neww) {
   long dt = MAX_FEEDRATE / 5000;
   long accel = 1;
   long steps_to_accel = dt - step_delay;
+  if(steps_to_accel < 0){
+    steps_to_accel = 0;
+    dt = step_delay;
+  }
   if(steps_to_accel > maxsteps/2 ) 
     steps_to_accel = maxsteps/2;
     
